@@ -1,7 +1,7 @@
 // Service worker: lets the app open with no internet connection.
 // When online it always loads the newest version; when offline it uses
 // the copy saved on the phone. Change VERSION after big updates.
-const VERSION = 'life-tracker-v1';
+const VERSION = 'life-tracker-v2';
 const FILES = [
   './',
   'index.html',
@@ -9,6 +9,14 @@ const FILES = [
   'js/app.js',
   'js/store.js',
   'js/dates.js',
+  'js/ui.js',
+  'js/forms.js',
+  'js/home.js',
+  'js/projects.js',
+  'js/goals.js',
+  'js/lists.js',
+  'js/more.js',
+  'js/vendor/Sortable.min.js',
   'manifest.webmanifest',
   'icons/apple-touch-icon.png',
   'icons/icon-192.png',

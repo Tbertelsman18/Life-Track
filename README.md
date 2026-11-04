@@ -4,16 +4,16 @@ My personal iPhone app for organizing my life. It's a free web app (PWA) that I 
 
 All data stays on my phone. There are no accounts and no servers, and it works offline.
 
-## What's built so far
+## What's built
 
-**Stage 1 (done):** tasks, sections, recurring tasks, Day/Week/Month views, the mini calendar, and Export/Import.
+All six stages are built:
 
-Coming next:
-2. Events, Forecast with lead times, Daily Check
-3. Projects and Radar
-4. Goals
-5. Info and Lists
-6. Sunday Planning, History, Most Pushed Off, Settings
+1. **Tasks, sections, recurring tasks, Day/Week/Month views, mini calendar, Export/Import**
+2. **Events** (single or multi-day) with "tell me ahead" lead times, the **Forecast** with countdowns, and the **Daily Check**. You're warned when you schedule a task during a multi-day event.
+3. **Projects**: an Active list in drag-to-reorder priority order, plus Radar and Done. Each project has notes, a task checklist, mini goals with dates, a target date, a status, and "last worked on". When you finish a project, the app offers to move the next Radar project up.
+4. **Goals**: yearly goals, quarterly goals, weekly targets with streaks, mini goals, task linking, slipping goals, reminders to set goals (2 weeks before each quarter, and in December for next year), and a review of last quarter.
+5. **Info and Lists**
+6. **Sunday Planning**, **History** (a weekly chart broken down by section, project or goal), **Most Pushed Off**, and **Settings**
 
 ## Files
 
@@ -21,10 +21,18 @@ Coming next:
 |---|---|
 | `index.html` | The page itself: tab bar, + button |
 | `css/styles.css` | All colors, sizes and layout (light and dark mode) |
-| `js/app.js` | Draws each screen and handles taps |
-| `js/store.js` | Saves and loads data on the phone; task rules (repeats, pushed off) |
-| `js/dates.js` | Date helpers |
-| `sw.js` | Lets the app work offline |
+| `js/app.js` | The switchboard: picks which screen to draw and passes taps along |
+| `js/store.js` | Saves and loads data on the device, plus all the rules (repeats, pushed off, Forecast, goal progress) |
+| `js/dates.js` | Date helpers (weeks, quarters, countdowns) |
+| `js/ui.js` | Shared pieces: icons, pop-up sheets, progress bars |
+| `js/forms.js` | Add/edit screens for tasks, events and sections |
+| `js/home.js` | Home tab: Day/Week/Month, Daily Check, Forecast |
+| `js/projects.js` | Projects tab |
+| `js/goals.js` | Goals tab |
+| `js/lists.js` | Lists and Info |
+| `js/more.js` | More tab: Sunday Planning, History, Most Pushed Off, Settings, Backup |
+| `js/vendor/Sortable.min.js` | Drag-to-reorder library (SortableJS, MIT license) |
+| `sw.js` | Lets the app work offline. Bump `VERSION` after big changes |
 | `manifest.webmanifest`, `icons/` | App name and Home Screen icon |
 
 ## Putting it on my iPhone

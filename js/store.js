@@ -1,11 +1,11 @@
 // The data store. All of your data lives in one object that is saved to
-// this phone's storage (localStorage) every time something changes.
+// this device's storage (localStorage) every time something changes.
 // Nothing is ever sent anywhere.
 
-import { todayKey, weekday } from './dates.js';
+import * as D from './dates.js';
 
 const STORAGE_KEY = 'lifeTracker.data';
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;
 
 export const SECTION_COLORS = [
   '#3b82f6', // blue
@@ -20,9 +20,21 @@ export const SECTION_COLORS = [
   '#a16207', // brown
 ];
 
+export const LEAD_TIMES = [
+  { id: '1d', label: '1 day', days: 1 },
+  { id: '3d', label: '3 days', days: 3 },
+  { id: '1w', label: '1 week', days: 7 },
+  { id: '2w', label: '2 weeks', days: 14 },
+  { id: '1m', label: '1 month', days: 30 },
+];
+
+export const PROJECT_STATUSES = ['Not started', 'In progress', 'Stuck', 'Done'];
+
 export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
+
+const nowISO = () => new Date().toISOString();
 
 function defaultData() {
   return {
@@ -33,26 +45,31 @@ function defaultData() {
       { id: 'personal', name: 'Personal', color: '#22a06b' },
     ],
     tasks: [],
+    events: [],
+    dailyCheck: { items: [], done: {} },
+    projects: [],
+    yearlyGoals: [],
+    quarterlyGoals: [],
+    dismissed: {},
+    info: [],
+    lists: [],
   };
 }
 
 /*
-  A task looks like this:
-  {
-    id, title, notes,
-    date: "2026-11-04" or null (null = Unscheduled),
-    time: "09:30" or null,
-    sectionId, projectId (later), goalId (later),
-    done: true/false, doneAt,            // one-time tasks
-    repeat: null or {                    // recurring tasks
-      days: [1, 2],                      // 0 = Sun ... 6 = Sat
-      until: "2027-01-01" or null,
-      doneDates: { "2026-11-04": "<when it was checked>" },
-      skips: ["2026-11-05"],             // days removed from the series
-    },
-    pushes: [{ from, to, at }],          // each time it was pushed off
-    createdAt,
-  }
+  What each kind of item looks like:
+
+  task:     { id, title, notes, date|null, time|null, sectionId, projectId, goalId,
+              done, doneAt, repeat: null | { days:[0-6], until, doneDates:{date:iso}, skips:[] },
+              pushes:[{from,to,at}], seriesId?, createdAt }
+  event:    { id, title, date, endDate|null, time|null, sectionId, lead:'1w', notes }
+  project:  { id, title, notes, sectionId, status, targetDate, state:'active'|'radar'|'done',
+              order, miniGoals:[{id,title,date,done}], lastWorkedAt, completedAt, createdAt }
+  yearly:   { id, year, title, notes, createdAt }
+  quarterly:{ id, yearlyId, year, q, title, notes, miniGoals:[{id,title,date,done}],
+              targets:[{ id, label, perWeek, manual:{weekStart:n} }], createdAt }
+  info:     { id, title, body, createdAt }
+  list:     { id, name, checkable, items:[{id,text,note,checked}], createdAt }
 */
 
 let data = load();
@@ -70,13 +87,25 @@ function load() {
 // Fills in anything missing so older saved data keeps working as the app grows.
 function migrate(d) {
   const base = defaultData();
+  const arr = (v) => (Array.isArray(v) ? v : []);
   return {
     ...base,
     ...d,
     version: DATA_VERSION,
     settings: { ...base.settings, ...(d.settings || {}) },
     sections: Array.isArray(d.sections) ? d.sections : base.sections,
-    tasks: Array.isArray(d.tasks) ? d.tasks : [],
+    tasks: arr(d.tasks),
+    events: arr(d.events),
+    dailyCheck: {
+      items: arr(d.dailyCheck?.items),
+      done: d.dailyCheck?.done && typeof d.dailyCheck.done === 'object' ? d.dailyCheck.done : {},
+    },
+    projects: arr(d.projects),
+    yearlyGoals: arr(d.yearlyGoals),
+    quarterlyGoals: arr(d.quarterlyGoals),
+    dismissed: d.dismissed && typeof d.dismissed === 'object' ? d.dismissed : {},
+    info: arr(d.info),
+    lists: arr(d.lists),
   };
 }
 
@@ -87,16 +116,26 @@ export function save() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
-    alert('Could not save. Your phone storage may be full.');
+    alert('Could not save. Your device storage may be full.');
   }
   listeners.forEach((fn) => fn());
 }
 
 export function getData() { return data; }
 
+// Save without redrawing the screen (used while typing notes).
+export function saveQuietly() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { /* shown on next save */ }
+}
+
 // ---------- Settings ----------
 export function setSetting(key, value) {
   data.settings[key] = value;
+  save();
+}
+
+export function dismiss(key) {
+  data.dismissed[key] = nowISO();
   save();
 }
 
@@ -123,10 +162,12 @@ export function updateSection(id, changes) {
   save();
 }
 
-// Tasks in a deleted section move to the given section (or none).
+// Tasks, events and projects in a deleted section move to another section.
 export function deleteSection(id, moveToId) {
   data.sections = data.sections.filter((s) => s.id !== id);
-  data.tasks.forEach((t) => { if (t.sectionId === id) t.sectionId = moveToId || null; });
+  for (const list of [data.tasks, data.events, data.projects]) {
+    list.forEach((x) => { if (x.sectionId === id) x.sectionId = moveToId || null; });
+  }
   save();
 }
 
@@ -153,10 +194,11 @@ export function addTask(fields) {
     doneAt: null,
     repeat: null,
     pushes: [],
-    createdAt: new Date().toISOString(),
+    createdAt: nowISO(),
     ...fields,
   };
   data.tasks.push(task);
+  touchProject(task.projectId);
   save();
   return task;
 }
@@ -168,7 +210,7 @@ export function updateTask(id, changes) {
   if (!t.repeat && !changes.repeat && 'date' in changes && t.date && changes.date !== t.date) {
     if (!changes.date || changes.date > t.date) {
       t.pushes = t.pushes || [];
-      t.pushes.push({ from: t.date, to: changes.date || null, at: new Date().toISOString() });
+      t.pushes.push({ from: t.date, to: changes.date || null, at: nowISO() });
     }
   }
   Object.assign(t, changes);
@@ -180,14 +222,14 @@ export function deleteTask(id) {
   save();
 }
 
-// Does a recurring task happen on this date?
+// Does a task happen on this date?
 export function occursOn(task, key) {
   if (!task.repeat) return task.date === key;
   const r = task.repeat;
   if (task.date && key < task.date) return false;
   if (r.until && key > r.until) return false;
   if ((r.skips || []).includes(key)) return false;
-  return r.days.includes(weekday(key));
+  return r.days.includes(D.weekday(key));
 }
 
 export function isDoneOn(task, key) {
@@ -201,15 +243,15 @@ export function toggleDone(id, key) {
   if (t.repeat) {
     t.repeat.doneDates = t.repeat.doneDates || {};
     if (t.repeat.doneDates[key]) delete t.repeat.doneDates[key];
-    else t.repeat.doneDates[key] = new Date().toISOString();
+    else t.repeat.doneDates[key] = nowISO();
   } else {
     t.done = !t.done;
-    t.doneAt = t.done ? new Date().toISOString() : null;
+    t.doneAt = t.done ? nowISO() : null;
   }
+  touchProject(t.projectId);
   save();
 }
 
-// Remove one day from a recurring series.
 export function skipOccurrence(id, key) {
   const t = getTask(id);
   if (!t || !t.repeat) return;
@@ -219,15 +261,15 @@ export function skipOccurrence(id, key) {
 
 // Move one day of a recurring series to another day. This creates a
 // one-time copy on the new day and records it as pushed off.
-export function moveOccurrence(id, fromKey, toKey) {
+export function moveOccurrence(id, fromK, toK) {
   const t = getTask(id);
-  if (!t || !t.repeat) return;
-  t.repeat.skips = [...new Set([...(t.repeat.skips || []), fromKey])];
+  if (!t || !t.repeat) return null;
+  t.repeat.skips = [...new Set([...(t.repeat.skips || []), fromK])];
   const copy = {
     id: uid(),
     title: t.title,
     notes: t.notes,
-    date: toKey || null,
+    date: toK || null,
     time: t.time,
     sectionId: t.sectionId,
     projectId: t.projectId,
@@ -236,39 +278,596 @@ export function moveOccurrence(id, fromKey, toKey) {
     doneAt: null,
     repeat: null,
     seriesId: t.id,
-    pushes: (!toKey || toKey > fromKey)
-      ? [{ from: fromKey, to: toKey || null, at: new Date().toISOString() }]
-      : [],
-    createdAt: new Date().toISOString(),
+    pushes: (!toK || toK > fromK) ? [{ from: fromK, to: toK || null, at: nowISO() }] : [],
+    createdAt: nowISO(),
   };
   data.tasks.push(copy);
   save();
   return copy;
 }
 
-// Tasks on a given day: not done first (timed tasks in time order, then
-// untimed), then finished tasks at the bottom.
+const byTimeThenCreated = (key) => (a, b) => {
+  const da = isDoneOn(a, key), db = isDoneOn(b, key);
+  if (da !== db) return da ? 1 : -1;
+  if (a.time && b.time) return a.time.localeCompare(b.time);
+  if (a.time) return -1;
+  if (b.time) return 1;
+  return (a.createdAt || '').localeCompare(b.createdAt || '');
+};
+
+// Tasks on a day: not done first (timed in time order, then untimed),
+// then finished tasks at the bottom.
 export function tasksOn(key) {
-  const list = data.tasks.filter((t) => occursOn(t, key));
-  return list.sort((a, b) => {
-    const da = isDoneOn(a, key), db = isDoneOn(b, key);
-    if (da !== db) return da ? 1 : -1;
-    if (a.time && b.time) return a.time.localeCompare(b.time);
-    if (a.time) return -1;
-    if (b.time) return 1;
-    return (a.createdAt || '').localeCompare(b.createdAt || '');
-  });
+  return data.tasks.filter((t) => occursOn(t, key)).sort(byTimeThenCreated(key));
 }
 
+// Undated tasks that aren't inside a project (project tasks live in the project).
 export function unscheduledTasks() {
   return data.tasks
-    .filter((t) => !t.date && !t.repeat)
+    .filter((t) => !t.date && !t.repeat && !t.projectId)
     .sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1));
+}
+
+// Every completion as { task, date } where date is the day it counts for.
+export function completions() {
+  const out = [];
+  for (const t of data.tasks) {
+    if (t.repeat) {
+      for (const k of Object.keys(t.repeat.doneDates || {})) out.push({ task: t, date: k });
+    } else if (t.done) {
+      out.push({ task: t, date: t.doneAt ? D.keyOfISO(t.doneAt) : (t.date || D.todayKey()) });
+    }
+  }
+  return out;
+}
+
+// ---------- Events ----------
+export function getEvent(id) {
+  return data.events.find((e) => e.id === id) || null;
+}
+
+export function addEvent(fields) {
+  const ev = {
+    id: uid(), title: '', date: D.todayKey(), endDate: null, time: null,
+    sectionId: data.sections[0]?.id || null, lead: '1w', notes: '', createdAt: nowISO(), ...fields,
+  };
+  data.events.push(ev);
+  save();
+  return ev;
+}
+
+export function updateEvent(id, changes) {
+  const ev = getEvent(id);
+  if (ev) Object.assign(ev, changes);
+  save();
+}
+
+export function deleteEvent(id) {
+  data.events = data.events.filter((e) => e.id !== id);
+  save();
+}
+
+export function eventLast(ev) {
+  return ev.endDate && ev.endDate > ev.date ? ev.endDate : ev.date;
+}
+
+export function eventsOn(key) {
+  return data.events
+    .filter((e) => e.date <= key && key <= eventLast(e))
+    .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+}
+
+// Multi-day events covering a date (used for "you're away" warnings).
+export function blockingEventsOn(key) {
+  return data.events.filter((e) => e.endDate && e.endDate > e.date && e.date <= key && key <= e.endDate);
+}
+
+export function leadDays(id) {
+  return (LEAD_TIMES.find((l) => l.id === id) || LEAD_TIMES[2]).days;
+}
+
+// ---------- Forecast ----------
+// Upcoming things to know about, nearest first.
+export function forecast(today = D.todayKey()) {
+  const items = [];
+
+  for (const e of data.events) {
+    const last = eventLast(e);
+    if (last < today) continue;
+    if (e.date > today && D.daysBetween(today, e.date) > leadDays(e.lead)) continue;
+    const ongoing = e.date <= today && today <= last && last !== e.date;
+    items.push({
+      kind: 'event', id: e.id, title: e.title, date: e.date, endDate: e.endDate, time: e.time,
+      sectionId: e.sectionId,
+      when: ongoing ? `Now · ends ${D.formatMonthDay(last)}` : D.countdown(today, e.date),
+      sort: ongoing ? today : e.date,
+    });
+  }
+
+  // Project target dates and mini goals in the next 7 days
+  for (const p of data.projects) {
+    if (p.state === 'done') continue;
+    if (p.targetDate && p.targetDate >= today && D.daysBetween(today, p.targetDate) <= 7) {
+      items.push({ kind: 'project', id: p.id, title: `${p.title} — target date`, date: p.targetDate,
+        sectionId: p.sectionId, when: D.countdown(today, p.targetDate), sort: p.targetDate });
+    }
+    for (const m of p.miniGoals || []) {
+      if (!m.done && m.date && m.date >= today && D.daysBetween(today, m.date) <= 7) {
+        items.push({ kind: 'project', id: p.id, title: `${m.title} (${p.title})`, date: m.date,
+          sectionId: p.sectionId, when: D.countdown(today, m.date), sort: m.date });
+      }
+    }
+  }
+
+  // Goal mini goals in the next 7 days
+  for (const g of data.quarterlyGoals) {
+    for (const m of g.miniGoals || []) {
+      if (!m.done && m.date && m.date >= today && D.daysBetween(today, m.date) <= 7) {
+        items.push({ kind: 'goal', id: g.id, title: `${m.title} (${g.title})`, date: m.date,
+          when: D.countdown(today, m.date), sort: m.date });
+      }
+    }
+  }
+
+  items.push(...goalReminders(today));
+  return items.sort((a, b) => a.sort.localeCompare(b.sort));
+}
+
+// "Set your goals" reminders.
+export function goalReminders(today = D.todayKey()) {
+  const out = [];
+  const cur = D.quarterOf(today);
+  const next = D.nextQuarter(cur.year, cur.q);
+  const nextStart = D.quarterStart(next.year, next.q);
+  const untilNext = D.daysBetween(today, nextStart);
+
+  // 2 weeks before a quarter starts (and until goals are set)
+  if (untilNext <= 14 && quarterlyFor(next.year, next.q).length === 0) {
+    out.push({ kind: 'reminder', action: 'plan-quarter', year: next.year, q: next.q,
+      key: `q-${next.year}-${next.q}`,
+      title: `Set your goals for ${D.quarterLabel(next.year, next.q)}`,
+      when: D.countdown(today, nextStart), sort: today });
+  }
+  // A quarter has started with no goals
+  if (quarterlyFor(cur.year, cur.q).length === 0 && data.yearlyGoals.some((g) => g.year === cur.year)) {
+    out.push({ kind: 'reminder', action: 'plan-quarter', year: cur.year, q: cur.q,
+      key: `q-${cur.year}-${cur.q}`,
+      title: `Set your goals for ${D.quarterLabel(cur.year, cur.q)}`, when: 'Now', sort: today });
+  }
+  // Early December: next year's yearly goals
+  const month = D.fromKey(today).getMonth();
+  if (month === 11 && !data.yearlyGoals.some((g) => g.year === cur.year + 1)) {
+    out.push({ kind: 'reminder', action: 'plan-year', year: cur.year + 1,
+      key: `y-${cur.year + 1}`,
+      title: `Set your yearly goals for ${cur.year + 1}`,
+      when: D.countdown(today, `${cur.year + 1}-01-01`), sort: today });
+  }
+  // No yearly goals at all for this year
+  if (!data.yearlyGoals.some((g) => g.year === cur.year)) {
+    out.push({ kind: 'reminder', action: 'plan-year', year: cur.year,
+      key: `y-${cur.year}`,
+      title: `Set your yearly goals for ${cur.year}`, when: 'Now', sort: today });
+  }
+  // "Not now" hides a reminder for 3 days
+  const seen = new Set();
+  const snoozed = (k) => data.dismissed[k] && D.daysBetween(D.keyOfISO(data.dismissed[k]), today) < 3;
+  return out.filter((r) => !snoozed(r.key) && !seen.has(r.key) && seen.add(r.key));
+}
+
+// ---------- Daily Check ----------
+export function addCheckItem(title) {
+  data.dailyCheck.items.push({ id: uid(), title: title.trim() });
+  save();
+}
+
+export function removeCheckItem(id) {
+  data.dailyCheck.items = data.dailyCheck.items.filter((i) => i.id !== id);
+  save();
+}
+
+export function renameCheckItem(id, title) {
+  const i = data.dailyCheck.items.find((x) => x.id === id);
+  if (i) i.title = title.trim();
+  save();
+}
+
+export function isChecked(itemId, key) {
+  return Boolean(data.dailyCheck.done[key]?.[itemId]);
+}
+
+export function toggleCheck(itemId, key) {
+  const day = data.dailyCheck.done[key] || (data.dailyCheck.done[key] = {});
+  if (day[itemId]) delete day[itemId]; else day[itemId] = true;
+  // Keep only the last 120 days of check history
+  const cutoff = D.addDays(D.todayKey(), -120);
+  for (const k of Object.keys(data.dailyCheck.done)) if (k < cutoff) delete data.dailyCheck.done[k];
+  save();
+}
+
+export function reorderCheckItems(ids) {
+  const map = new Map(data.dailyCheck.items.map((i) => [i.id, i]));
+  data.dailyCheck.items = ids.map((id) => map.get(id)).filter(Boolean);
+  save();
+}
+
+// ---------- Projects ----------
+export function getProject(id) {
+  return data.projects.find((p) => p.id === id) || null;
+}
+
+export function projectsIn(state) {
+  return data.projects.filter((p) => p.state === state).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+export function addProject(fields) {
+  const state = fields.state || 'active';
+  const p = {
+    id: uid(), title: '', notes: '', sectionId: data.sections[0]?.id || null,
+    status: 'Not started', targetDate: null, state,
+    order: projectsIn(state).length, miniGoals: [], lastWorkedAt: null, completedAt: null,
+    createdAt: nowISO(), ...fields,
+  };
+  data.projects.push(p);
+  save();
+  return p;
+}
+
+export function updateProject(id, changes, { worked = false } = {}) {
+  const p = getProject(id);
+  if (!p) return;
+  Object.assign(p, changes);
+  if (worked) p.lastWorkedAt = nowISO();
+  save();
+}
+
+function touchProject(id) {
+  const p = id && getProject(id);
+  if (p) {
+    p.lastWorkedAt = nowISO();
+    if (p.status === 'Not started' && projectTasks(id).some((t) => t.done)) p.status = 'In progress';
+  }
+}
+
+export function deleteProject(id) {
+  data.projects = data.projects.filter((p) => p.id !== id);
+  data.tasks.forEach((t) => { if (t.projectId === id) t.projectId = null; });
+  save();
+}
+
+export function reorderProjects(state, ids) {
+  ids.forEach((id, i) => { const p = getProject(id); if (p) { p.order = i; p.state = state; } });
+  save();
+}
+
+// Move a project between Active / Radar / Done. New arrivals go to the bottom
+// (Radar → Active goes to the bottom of Active; you can drag it up).
+export function moveProject(id, state) {
+  const p = getProject(id);
+  if (!p) return;
+  p.state = state;
+  p.order = projectsIn(state).filter((x) => x.id !== id).length;
+  if (state === 'done') { p.status = 'Done'; p.completedAt = nowISO(); }
+  else if (p.status === 'Done') { p.status = 'In progress'; p.completedAt = null; }
+  save();
+}
+
+export function projectTasks(id) {
+  return data.tasks.filter((t) => t.projectId === id && !t.repeat)
+    .sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return (a.date || '9999').localeCompare(b.date || '9999') || (a.createdAt || '').localeCompare(b.createdAt || '');
+    });
+}
+
+export function projectProgress(id) {
+  const tasks = projectTasks(id);
+  return { done: tasks.filter((t) => t.done).length, total: tasks.length };
+}
+
+// Dated project and goal mini goals on a given day, for the calendar.
+export function milestonesOn(key) {
+  const out = [];
+  for (const p of data.projects) {
+    if (p.state === 'done') continue;
+    if (p.targetDate === key) out.push({ kind: 'project', id: p.id, title: `${p.title} target`, sectionId: p.sectionId, done: false });
+    for (const m of p.miniGoals || []) {
+      if (m.date === key) out.push({ kind: 'project', id: p.id, title: m.title, sectionId: p.sectionId, done: m.done });
+    }
+  }
+  for (const g of data.quarterlyGoals) {
+    for (const m of g.miniGoals || []) {
+      if (m.date === key) out.push({ kind: 'goal', id: g.id, title: m.title, sectionId: null, done: m.done });
+    }
+  }
+  return out;
+}
+
+// Mini goals live on projects and quarterly goals.
+export function addMiniGoal(owner, title, date) {
+  owner.miniGoals = owner.miniGoals || [];
+  owner.miniGoals.push({ id: uid(), title: title.trim(), date: date || null, done: false });
+  save();
+}
+
+export function toggleMiniGoal(owner, mid) {
+  const m = (owner.miniGoals || []).find((x) => x.id === mid);
+  if (m) { m.done = !m.done; m.doneAt = m.done ? nowISO() : null; }
+  save();
+}
+
+export function deleteMiniGoal(owner, mid) {
+  owner.miniGoals = (owner.miniGoals || []).filter((x) => x.id !== mid);
+  save();
+}
+
+// ---------- Goals ----------
+export function getYearly(id) { return data.yearlyGoals.find((g) => g.id === id) || null; }
+export function getQuarterly(id) { return data.quarterlyGoals.find((g) => g.id === id) || null; }
+
+export function yearlyFor(year) {
+  return data.yearlyGoals.filter((g) => g.year === year);
+}
+
+export function quarterlyFor(year, q, yearlyId) {
+  return data.quarterlyGoals.filter((g) => g.year === year && g.q === q && (!yearlyId || g.yearlyId === yearlyId));
+}
+
+export function addYearly(fields) {
+  const g = { id: uid(), year: new Date().getFullYear(), title: '', notes: '', createdAt: nowISO(), ...fields };
+  data.yearlyGoals.push(g);
+  save();
+  return g;
+}
+
+export function updateYearly(id, changes) {
+  const g = getYearly(id);
+  if (g) Object.assign(g, changes);
+  save();
+}
+
+export function deleteYearly(id) {
+  const qIds = new Set(data.quarterlyGoals.filter((q) => q.yearlyId === id).map((q) => q.id));
+  const targetIds = new Set(data.quarterlyGoals.filter((q) => qIds.has(q.id)).flatMap((q) => (q.targets || []).map((t) => t.id)));
+  data.quarterlyGoals = data.quarterlyGoals.filter((q) => q.yearlyId !== id);
+  data.yearlyGoals = data.yearlyGoals.filter((g) => g.id !== id);
+  data.tasks.forEach((t) => {
+    if (t.goalId === id || qIds.has(t.goalId) || targetIds.has(t.goalId)) t.goalId = null;
+  });
+  save();
+}
+
+export function addQuarterly(fields) {
+  const g = { id: uid(), yearlyId: null, year: new Date().getFullYear(), q: 1, title: '', notes: '',
+    miniGoals: [], targets: [], createdAt: nowISO(), ...fields };
+  data.quarterlyGoals.push(g);
+  save();
+  return g;
+}
+
+export function updateQuarterly(id, changes) {
+  const g = getQuarterly(id);
+  if (g) Object.assign(g, changes);
+  save();
+}
+
+export function deleteQuarterly(id) {
+  const g = getQuarterly(id);
+  const ids = new Set([id, ...((g?.targets) || []).map((t) => t.id)]);
+  data.quarterlyGoals = data.quarterlyGoals.filter((x) => x.id !== id);
+  data.tasks.forEach((t) => { if (ids.has(t.goalId)) t.goalId = null; });
+  save();
+}
+
+export function addTarget(goal, label, perWeek) {
+  goal.targets = goal.targets || [];
+  goal.targets.push({ id: uid(), label: label.trim(), perWeek: Math.max(1, Number(perWeek) || 1), manual: {}, createdAt: nowISO() });
+  save();
+}
+
+export function deleteTarget(goal, tid) {
+  goal.targets = (goal.targets || []).filter((t) => t.id !== tid);
+  data.tasks.forEach((t) => { if (t.goalId === tid) t.goalId = null; });
+  save();
+}
+
+export function adjustTarget(goal, tid, weekStart, delta) {
+  const t = (goal.targets || []).find((x) => x.id === tid);
+  if (!t) return;
+  t.manual = t.manual || {};
+  t.manual[weekStart] = Math.max(0, (t.manual[weekStart] || 0) + delta);
+  save();
+}
+
+// Find what a task's goalId points to: { yearly, quarterly, target }
+export function resolveGoal(goalId) {
+  if (!goalId) return null;
+  const y = getYearly(goalId);
+  if (y) return { yearly: y, quarterly: null, target: null };
+  const q = getQuarterly(goalId);
+  if (q) return { yearly: getYearly(q.yearlyId), quarterly: q, target: null };
+  for (const g of data.quarterlyGoals) {
+    const t = (g.targets || []).find((x) => x.id === goalId);
+    if (t) return { yearly: getYearly(g.yearlyId), quarterly: g, target: t };
+  }
+  return null;
+}
+
+// Completed tasks linked to a goal (yearly includes its quarterly goals and targets).
+export function goalCompletions(goalId) {
+  const ids = new Set([goalId]);
+  for (const g of data.quarterlyGoals) {
+    if (g.id === goalId || g.yearlyId === goalId) {
+      ids.add(g.id);
+      (g.targets || []).forEach((t) => ids.add(t.id));
+    }
+  }
+  return completions().filter((c) => ids.has(c.task.goalId)).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// How many times a weekly target was hit in a given week.
+export function targetCount(target, weekStart) {
+  const end = D.addDays(weekStart, 6);
+  const auto = completions().filter((c) => c.task.goalId === target.id && c.date >= weekStart && c.date <= end).length;
+  return auto + ((target.manual && target.manual[weekStart]) || 0);
+}
+
+// Weeks of a target, from the goal's quarter start to this week (or quarter end).
+export function targetWeeks(goal, target, today = D.todayKey()) {
+  // Start from the quarter's first week, or the week the target was added if later
+  let qs = D.startOfWeek(D.quarterStart(goal.year, goal.q));
+  const added = target.createdAt || goal.createdAt;
+  if (added && D.startOfWeek(D.keyOfISO(added)) > qs) qs = D.startOfWeek(D.keyOfISO(added));
+  const qe = D.quarterEnd(goal.year, goal.q);
+  const lastWeek = D.startOfWeek(today < qe ? today : qe);
+  const weeks = [];
+  for (let w = qs; w <= lastWeek; w = D.addDays(w, 7)) {
+    const count = targetCount(target, w);
+    weeks.push({ weekStart: w, count, hit: count >= target.perWeek, current: w === D.startOfWeek(today) });
+  }
+  return weeks;
+}
+
+// Current streak of hit weeks. The current week counts only once it's hit.
+export function targetStreak(weeks) {
+  let streak = 0;
+  for (let i = weeks.length - 1; i >= 0; i--) {
+    const w = weeks[i];
+    if (w.hit) streak++;
+    else if (w.current) continue;
+    else break;
+  }
+  return streak;
+}
+
+// Progress of a quarterly goal from 0 to 1 (or null if there is nothing to measure).
+// It averages: mini goals done, and weekly target hit rate (finished weeks).
+export function quarterlyProgress(g, today = D.todayKey()) {
+  const parts = [];
+  const minis = g.miniGoals || [];
+  if (minis.length) parts.push(minis.filter((m) => m.done).length / minis.length);
+  for (const t of g.targets || []) {
+    const weeks = targetWeeks(g, t, today).filter((w) => !w.current || w.hit);
+    if (weeks.length) parts.push(weeks.filter((w) => w.hit).length / weeks.length);
+  }
+  if (!parts.length) return null;
+  return parts.reduce((a, b) => a + b, 0) / parts.length;
+}
+
+export function yearlyProgress(y, today = D.todayKey()) {
+  const vals = data.quarterlyGoals.filter((q) => q.yearlyId === y.id)
+    .map((q) => quarterlyProgress(q, today)).filter((v) => v !== null);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+// Last date anything happened on a goal (linked task done, mini goal done, manual target tally).
+export function lastGoalActivity(goalId) {
+  let last = null;
+  const bump = (k) => { if (k && (!last || k > last)) last = k; };
+  const c = goalCompletions(goalId)[0];
+  if (c) bump(c.date);
+  for (const g of data.quarterlyGoals) {
+    if (g.id !== goalId && g.yearlyId !== goalId) continue;
+    (g.miniGoals || []).forEach((m) => { if (m.done && m.doneAt) bump(D.keyOfISO(m.doneAt)); });
+    (g.targets || []).forEach((t) => Object.entries(t.manual || {}).forEach(([w, n]) => { if (n > 0) bump(w); }));
+  }
+  return last;
+}
+
+// ---------- Info ----------
+export function addInfo(fields) {
+  const i = { id: uid(), title: '', body: '', createdAt: nowISO(), ...fields };
+  data.info.unshift(i);
+  save();
+  return i;
+}
+export function updateInfo(id, changes) {
+  const i = data.info.find((x) => x.id === id);
+  if (i) Object.assign(i, changes);
+  save();
+}
+export function deleteInfo(id) {
+  data.info = data.info.filter((x) => x.id !== id);
+  save();
+}
+
+// ---------- Lists ----------
+export function getList(id) { return data.lists.find((l) => l.id === id) || null; }
+
+export function addList(name, checkable = false) {
+  const l = { id: uid(), name: name.trim(), checkable, items: [], createdAt: nowISO() };
+  data.lists.push(l);
+  save();
+  return l;
+}
+export function updateList(id, changes) {
+  const l = getList(id);
+  if (l) Object.assign(l, changes);
+  save();
+}
+export function deleteList(id) {
+  data.lists = data.lists.filter((l) => l.id !== id);
+  save();
+}
+export function addListItem(listId, text, note = '') {
+  const l = getList(listId);
+  if (!l) return;
+  l.items.push({ id: uid(), text: text.trim(), note: note.trim(), checked: false });
+  save();
+}
+export function updateListItem(listId, itemId, changes) {
+  const it = getList(listId)?.items.find((i) => i.id === itemId);
+  if (it) Object.assign(it, changes);
+  save();
+}
+export function deleteListItem(listId, itemId) {
+  const l = getList(listId);
+  if (l) l.items = l.items.filter((i) => i.id !== itemId);
+  save();
+}
+export function reorderListItems(listId, ids) {
+  const l = getList(listId);
+  if (!l) return;
+  const map = new Map(l.items.map((i) => [i.id, i]));
+  l.items = ids.map((id) => map.get(id)).filter(Boolean);
+  save();
+}
+export function reorderLists(ids) {
+  const map = new Map(data.lists.map((l) => [l.id, l]));
+  data.lists = ids.map((id) => map.get(id)).filter(Boolean);
+  save();
+}
+
+// ---------- Pushed off ----------
+// Tasks grouped by title, most pushed first.
+export function mostPushed(limit = 10) {
+  const groups = new Map();
+  for (const t of data.tasks) {
+    const n = (t.pushes || []).length;
+    if (!n) continue;
+    const key = t.seriesId || t.title.trim().toLowerCase();
+    const g = groups.get(key) || { title: t.title, count: 0, sectionId: t.sectionId, last: null, ids: [] };
+    g.count += n;
+    g.ids.push(t.id);
+    const lastPush = t.pushes[t.pushes.length - 1].at;
+    if (!g.last || lastPush > g.last) g.last = lastPush;
+    groups.set(key, g);
+  }
+  return [...groups.values()].sort((a, b) => b.count - a.count || (b.last || '').localeCompare(a.last || '')).slice(0, limit);
+}
+
+// Not-done tasks that were pushed off in the 7 days before `today`.
+export function pushedLastWeek(today = D.todayKey()) {
+  const from = D.addDays(today, -7);
+  return data.tasks.filter((t) => !t.done && !t.repeat && (t.pushes || []).some((p) => {
+    const k = D.keyOfISO(p.at);
+    return k >= from && k <= today;
+  }));
 }
 
 // ---------- Export / Import ----------
 export function exportJSON() {
-  return JSON.stringify({ app: 'life-tracker', exportedAt: new Date().toISOString(), ...data }, null, 2);
+  return JSON.stringify({ app: 'life-tracker', exportedAt: nowISO(), ...data }, null, 2);
 }
 
 export function importJSON(text) {
@@ -283,5 +882,5 @@ export function importJSON(text) {
 }
 
 export function backupFileName() {
-  return `life-tracker-backup-${todayKey()}.json`;
+  return `life-tracker-backup-${D.todayKey()}.json`;
 }

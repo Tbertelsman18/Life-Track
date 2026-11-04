@@ -101,3 +101,56 @@ export function formatWeekRange(key) {
     ? `${sm} ${s.getDate()} – ${e.getDate()}`
     : `${sm} ${s.getDate()} – ${em} ${e.getDate()}`;
 }
+
+// ---------- Added in Stage 2+ ----------
+
+// Whole days from a to b (b - a). Positive if b is later.
+export function daysBetween(a, b) {
+  return Math.round((fromKey(b) - fromKey(a)) / 86400000);
+}
+
+// "Today", "Tomorrow", "in 5 days", "in 3 weeks"
+export function countdown(fromK, toK) {
+  const n = daysBetween(fromK, toK);
+  if (n === 0) return 'Today';
+  if (n === 1) return 'Tomorrow';
+  if (n === -1) return 'Yesterday';
+  if (n < 0) return `${-n} days ago`;
+  return `in ${n} days`;
+}
+
+// Quarters: Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec
+export function quarterOf(key) {
+  const d = fromKey(key);
+  return { year: d.getFullYear(), q: Math.floor(d.getMonth() / 3) + 1 };
+}
+
+export function quarterStart(year, q) {
+  return `${year}-${pad((q - 1) * 3 + 1)}-01`;
+}
+
+export function quarterEnd(year, q) {
+  return toKey(new Date(year, q * 3, 0));
+}
+
+export function nextQuarter(year, q) {
+  return q === 4 ? { year: year + 1, q: 1 } : { year, q: q + 1 };
+}
+
+export function prevQuarter(year, q) {
+  return q === 1 ? { year: year - 1, q: 4 } : { year, q: q - 1 };
+}
+
+export function quarterLabel(year, q) {
+  return `Q${q} ${year}`;
+}
+
+// The local date key of an ISO timestamp
+export function keyOfISO(iso) {
+  return toKey(new Date(iso));
+}
+
+export function formatMonthDay(key) {
+  const d = fromKey(key);
+  return `${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
+}

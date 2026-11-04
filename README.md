@@ -30,7 +30,7 @@ Coming next:
 ## Putting it on my iPhone
 
 1. In the GitHub repository, go to **Settings → Pages**. Under "Build and deployment", set Source to **Deploy from a branch**, Branch to **main**, and folder to **/ (root)**. Tap **Save**.
-2. Wait about a minute. The page shows the address, something like `https://YOUR-NAME.github.io/life-tracker/`.
+2. Wait about a minute. The page shows the address, something like `https://tbertelsman18.github.io/Life-Track/`.
 3. Open that address in **Safari** on the iPhone.
 4. Tap the **Share** button, then **Add to Home Screen**, then **Add**.
 5. From now on, always open the app from the Home Screen icon.

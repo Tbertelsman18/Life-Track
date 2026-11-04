@@ -44,7 +44,7 @@ export function renderGoals() {
             ${slipping ? `<span class="status st-stuck">Slipping</span>` : ''}
             <span class="pnum">${pct(prog)}</span>
           </span>
-          ${progressBar(prog)}
+          ${prog !== null ? progressBar(prog) : ''}
           ${qs.length ? `<span class="q-list">${qs.map((q) => {
             const qp = S.quarterlyProgress(q);
             return `<span class="q-line"><span>Q${q.q}: ${esc(q.title)}</span><b>${qp === null ? '' : pct(qp)}</b></span>`;

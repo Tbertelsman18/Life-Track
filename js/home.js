@@ -12,28 +12,70 @@ export function renderHome() {
       ${v[0].toUpperCase() + v.slice(1)}
     </button>`).join('');
 
-  let title;
-  if (ui.view === 'day') title = dayTitle(ui.date);
-  else if (ui.view === 'week') title = D.formatWeekRange(ui.date);
-  else title = D.formatMonthYear(ui.date);
+  const today = D.todayKey();
+  const isToday = ui.date === today;
+  const d = D.fromKey(ui.date);
+  let eyebrow, display;
+  if (ui.view === 'day') {
+    const rel = isToday ? 'Today' : ui.date === D.addDays(today, 1) ? 'Tomorrow' : ui.date === D.addDays(today, -1) ? 'Yesterday' : null;
+    eyebrow = rel ? `${rel} · ${D.DAY_NAMES_LONG[d.getDay()]}` : `${D.DAY_NAMES_LONG[d.getDay()]} · ${d.getFullYear()}`;
+    display = `${D.MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  } else if (ui.view === 'week') {
+    eyebrow = D.startOfWeek(today) === D.startOfWeek(ui.date) ? 'This week' : String(d.getFullYear());
+    display = D.formatWeekRange(ui.date);
+  } else {
+    eyebrow = String(d.getFullYear());
+    display = D.MONTH_NAMES[d.getMonth()];
+  }
 
-  const isToday = ui.date === D.todayKey();
   const body = ui.view === 'day' ? renderDay() : ui.view === 'week' ? renderWeek() : renderMonth();
+  const onCurrent = ui.view === 'day' ? isToday : ui.view === 'week' ? D.startOfWeek(today) === D.startOfWeek(ui.date) : D.sameMonth(today, ui.date);
 
   return `
     <header class="home-header">
-      <div class="seg" role="tablist">${seg}</div>
-      <div class="nav-row">
-        <button class="icon-btn" data-action="prev" aria-label="Previous">${icon('chev-left')}</button>
-        <button class="nav-title" data-action="toggle-mini" aria-expanded="${ui.miniOpen}">
-          ${esc(title)} <span class="caret ${ui.miniOpen ? 'up' : ''}">${icon('chev-down')}</span>
+      <div class="home-top">
+        <button class="date-block" data-action="toggle-mini" aria-expanded="${ui.miniOpen}" aria-label="Choose a date">
+          <span class="eyebrow">${esc(eyebrow)}</span>
+          <span class="display">${esc(display)}<span class="caret ${ui.miniOpen ? 'up' : ''}">${icon('chev-down')}</span></span>
         </button>
-        <button class="icon-btn" data-action="next" aria-label="Next">${icon('chev-right')}</button>
+        <div class="nav-btns">
+          ${!onCurrent ? '<button class="today-pill" data-action="today">Today</button>' : ''}
+          <button class="icon-btn" data-action="prev" aria-label="Previous">${icon('chev-left')}</button>
+          <button class="icon-btn" data-action="next" aria-label="Next">${icon('chev-right')}</button>
+        </div>
       </div>
-      ${!isToday ? '<button class="today-pill" data-action="today">Today</button>' : ''}
       ${ui.miniOpen ? renderMiniCalendar() : ''}
+      <div class="seg" role="tablist">${seg}</div>
     </header>
     <div class="view-body">${body}</div>`;
+}
+
+// A calm summary at the top of today.
+function renderSummary(key) {
+  const tasks = S.tasksOn(key);
+  const done = tasks.filter((t) => S.isDoneOn(t, key)).length;
+  const events = S.eventsOn(key).length;
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  let line;
+  if (!tasks.length && !events) line = 'A clear day. Nothing scheduled.';
+  else if (tasks.length && done === tasks.length) line = tasks.length === 1 ? 'Your task is done. Nice work.' : `All ${tasks.length} tasks done. Nice work.`;
+  else {
+    const parts = [];
+    if (tasks.length) parts.push(`${tasks.length - done} task${tasks.length - done === 1 ? '' : 's'} to go`);
+    if (events) parts.push(`${events} event${events > 1 ? 's' : ''}`);
+    line = parts.join(' · ');
+  }
+  const pctDone = tasks.length ? done / tasks.length : 0;
+  return `
+    <section class="summary">
+      <div class="summary-text">
+        <span class="summary-greet">${greet}</span>
+        <span class="summary-line">${esc(line)}</span>
+      </div>
+      ${tasks.length ? `<div class="ring" style="--p:${Math.round(pctDone * 100)}" role="img" aria-label="${done} of ${tasks.length} tasks done">
+        <span>${done}<small>/${tasks.length}</small></span></div>` : ''}
+    </section>`;
 }
 
 function dayTitle(key) {
@@ -77,6 +119,7 @@ function renderDay() {
   const isToday = ui.date === today;
   const parts = [];
 
+  if (isToday) parts.push(renderSummary(today));
   if (isToday && D.weekday(today) === 0) {
     parts.push(`<button class="banner" data-action="open-planning">
       ${icon('calendar')}<span><b>It's Sunday.</b> Plan your week</span>${icon('chev-right')}</button>`);

@@ -8,17 +8,21 @@ const STORAGE_KEY = 'lifeTracker.data';
 export const DATA_VERSION = 2;
 
 export const SECTION_COLORS = [
-  '#3b82f6', // blue
-  '#22a06b', // green
-  '#e5484d', // red
-  '#f59e0b', // amber
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#14b8a6', // teal
-  '#f97316', // orange
-  '#64748b', // slate
-  '#a16207', // brown
+  '#4f7cac', // dusk blue
+  '#5b8c6b', // sage green
+  '#b5654f', // terracotta
+  '#c39239', // ochre
+  '#8a76b5', // lavender
+  '#b86f8f', // rose
+  '#3f8f8a', // teal
+  '#c47c48', // clay
+  '#6b7a86', // slate
+  '#8f7356', // walnut
 ];
+
+// The brighter colors used before the redesign, mapped to their calmer versions.
+const OLD_COLORS = ['#3b82f6', '#22a06b', '#e5484d', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#64748b', '#a16207'];
+const calmer = (c) => { const i = OLD_COLORS.indexOf(c); return i >= 0 ? SECTION_COLORS[i] : c; };
 
 export const LEAD_TIMES = [
   { id: '1d', label: '1 day', days: 1 },
@@ -41,8 +45,8 @@ function defaultData() {
     version: DATA_VERSION,
     settings: { defaultView: 'day' },
     sections: [
-      { id: 'work', name: 'Work', color: '#3b82f6' },
-      { id: 'personal', name: 'Personal', color: '#22a06b' },
+      { id: 'work', name: 'Work', color: '#4f7cac' },
+      { id: 'personal', name: 'Personal', color: '#5b8c6b' },
     ],
     tasks: [],
     events: [],
@@ -93,7 +97,7 @@ function migrate(d) {
     ...d,
     version: DATA_VERSION,
     settings: { ...base.settings, ...(d.settings || {}) },
-    sections: Array.isArray(d.sections) ? d.sections : base.sections,
+    sections: Array.isArray(d.sections) ? d.sections.map((x) => ({ ...x, color: calmer(x.color) })) : base.sections,
     tasks: arr(d.tasks),
     events: arr(d.events),
     dailyCheck: {

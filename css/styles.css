@@ -88,17 +88,20 @@ a { color: var(--accent); }
 
 /* ---------------------------------------------------------------- headers */
 .home-header { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
-.home-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
-.date-block { display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-width: 0; }
+.home-top { display: flex; flex-direction: column; gap: 2px; }
+.eyebrow-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.display-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.date-block { display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-width: 0; flex: 1; }
 .eyebrow {
   font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .display {
-  font-family: var(--serif); font-size: 34px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15;
-  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--serif); font-size: clamp(25px, 7.6vw, 34px); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
 }
 .display .caret .ic { width: 18px; height: 18px; }
-.nav-btns { display: flex; align-items: center; gap: 2px; padding-bottom: 2px; }
+.nav-btns { display: flex; align-items: center; gap: 0; padding-bottom: 2px; flex: none; }
 
 .page-header h1, .sub-title {
   font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15;
@@ -141,7 +144,7 @@ a { color: var(--accent); }
 .today-pill {
   padding: 0 14px; height: 32px; border-radius: 999px;
   background: var(--accent-soft); color: var(--accent);
-  font-size: 14px; font-weight: 600; margin-right: 4px;
+  font-size: 14px; font-weight: 600; flex: none;
 }
 
 /* ---------------------------------------------------------------- summary */
@@ -614,3 +617,16 @@ label.field-group textarea { box-shadow: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
 }
+
+/* Daily Check on future days and in Week view */
+.task.upcoming .check { border-style: dashed; opacity: 0.6; }
+.task.upcoming .task-title { color: var(--text-2); }
+.wcheck {
+  display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 4px;
+  padding: 4px 10px; border-radius: 999px; background: var(--fill); color: var(--text-2);
+  font-size: 12.5px; font-weight: 600;
+}
+.wcheck .ic { width: 13px; height: 13px; stroke-width: 2.6; }
+.wcheck b { font-weight: 700; }
+.wcheck.all { background: var(--accent-soft); color: var(--accent); }
+.wcheck.future { opacity: 0.7; }

@@ -34,14 +34,18 @@ export function renderHome() {
   return `
     <header class="home-header">
       <div class="home-top">
-        <button class="date-block" data-action="toggle-mini" aria-expanded="${ui.miniOpen}" aria-label="Choose a date">
+        <div class="eyebrow-row">
           <span class="eyebrow">${esc(eyebrow)}</span>
-          <span class="display">${esc(display)}<span class="caret ${ui.miniOpen ? 'up' : ''}">${icon('chev-down')}</span></span>
-        </button>
-        <div class="nav-btns">
           ${!onCurrent ? '<button class="today-pill" data-action="today">Today</button>' : ''}
-          <button class="icon-btn" data-action="prev" aria-label="Previous">${icon('chev-left')}</button>
-          <button class="icon-btn" data-action="next" aria-label="Next">${icon('chev-right')}</button>
+        </div>
+        <div class="display-row">
+          <button class="date-block" data-action="toggle-mini" aria-expanded="${ui.miniOpen}" aria-label="Choose a date">
+            <span class="display">${esc(display)}<span class="caret ${ui.miniOpen ? 'up' : ''}">${icon('chev-down')}</span></span>
+          </button>
+          <div class="nav-btns">
+            <button class="icon-btn" data-action="prev" aria-label="Previous">${icon('chev-left')}</button>
+            <button class="icon-btn" data-action="next" aria-label="Next">${icon('chev-right')}</button>
+          </div>
         </div>
       </div>
       ${ui.miniOpen ? renderMiniCalendar() : ''}
@@ -124,7 +128,7 @@ function renderDay() {
     parts.push(`<button class="banner" data-action="open-planning">
       ${icon('calendar')}<span><b>It's Sunday.</b> Plan your week</span>${icon('chev-right')}</button>`);
   }
-  if (ui.date <= today) parts.push(renderDailyCheck(ui.date));
+  parts.push(renderDailyCheck(ui.date)); // shows on every day
   if (isToday) parts.push(renderForecast());
 
   parts.push(`
@@ -237,6 +241,15 @@ function renderDailyCheck(key) {
         <input name="title" placeholder="Add a daily item" autocomplete="off">
         <button class="link strong" type="submit">Add</button>
       </form>`;
+  } else if (key > D.todayKey()) {
+    // A future day: show the same items, ready to check off on the day.
+    body = `<ul class="task-list compact">
+      ${items.map((i) => `<li class="task upcoming" style="--c:var(--accent)">
+          <span class="check" aria-hidden="true"></span>
+          <span class="task-main static"><span class="task-title">${esc(i.title)}</span></span>
+        </li>`).join('')}
+    </ul>
+    <p class="hint left">Repeats every day. You can check these off on ${esc(D.formatShort(key))}.</p>`;
   } else {
     body = `<ul class="task-list compact">
       ${items.map((i) => {
@@ -306,9 +319,20 @@ function renderWeek() {
           <span class="wn">${d.getDate()}</span>
           <span class="wc">${tasks.length ? `${tasks.filter((t) => S.isDoneOn(t, k)).length}/${tasks.length}` : ''}</span>
         </button>
+        ${weekCheckLine(k)}
         ${items || `<button class="add-inline" data-action="add-on" data-date="${k}">+ Add</button>`}
       </section>`;
   }).join('') + renderUnscheduled();
+}
+
+// A small Daily Check line for each day in Week view.
+function weekCheckLine(k) {
+  const items = S.getData().dailyCheck.items;
+  if (!items.length) return '';
+  const done = items.filter((i) => S.isChecked(i.id, k)).length;
+  const all = done === items.length;
+  return `<button class="wcheck ${all ? 'all' : ''} ${k > D.todayKey() ? 'future' : ''}" data-action="open-day" data-date="${k}">
+    ${icon('check')}<span>Daily Check</span><b>${done}/${items.length}</b></button>`;
 }
 
 // ---------------------------------------------------------------- month

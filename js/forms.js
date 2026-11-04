@@ -27,13 +27,14 @@ function goalOptions(selected) {
   let html = `<option value="">None</option>`;
   for (const y of data.yearlyGoals.filter((g) => years.has(g.year)).sort((a, b) => a.year - b.year)) {
     const o = (id, label) => `<option value="${id}" ${id === selected ? 'selected' : ''}>${label}</option>`;
-    let group = o(y.id, esc(y.title));
-    const qs = data.quarterlyGoals.filter((q) => q.yearlyId === y.id).sort((a, b) => a.q - b.q);
-    for (const q of qs) {
-      group += o(q.id, `&nbsp;&nbsp;Q${q.q}: ${esc(q.title)}`);
-      for (const t of q.targets || []) group += o(t.id, `&nbsp;&nbsp;&nbsp;&nbsp;↳ ${esc(t.label)} (${t.perWeek}/wk)`);
-    }
-    html += `<optgroup label="${esc(y.title)} · ${y.year}">${group}</optgroup>`;
+    const cur = S.currentStep(y.id);
+    let group = o(y.id, `${esc(y.title)} (whole goal)`);
+    S.stepsFor(y.id).forEach((q, i) => {
+      if (q.done && q.id !== selected) return; // finished steps are hidden
+      group += o(q.id, `Step ${i + 1}: ${esc(q.title)}${q === cur ? ' ← now' : ''}`);
+      for (const t of q.targets || []) group += o(t.id, `&nbsp;&nbsp;&nbsp;↳ ${esc(t.label)} (${t.perWeek}/wk)`);
+    });
+    html += `<optgroup label="${esc(y.title)}${y.year !== year ? ` · ${y.year}` : ''}">${group}</optgroup>`;
   }
   return html;
 }
@@ -117,7 +118,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
           <select name="projectId">${projectOptions(v.projectId)}</select>
         </label>
         <label class="field">
-          <span>Goal</span>
+          <span>Goal / step</span>
           <select name="goalId">${goalOptions(v.goalId)}</select>
         </label>
       </div>

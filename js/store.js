@@ -57,6 +57,7 @@ function defaultData() {
     dismissed: {},
     info: [],
     lists: [],
+    grades: {},
   };
 }
 
@@ -77,6 +78,7 @@ function defaultData() {
 */
 
 let data = load();
+orderSteps();
 
 function load() {
   try {
@@ -110,6 +112,7 @@ function migrate(d) {
     dismissed: d.dismissed && typeof d.dismissed === 'object' ? d.dismissed : {},
     info: arr(d.info),
     lists: arr(d.lists),
+    grades: d.grades && typeof d.grades === 'object' ? d.grades : {},
   };
 }
 
@@ -641,8 +644,9 @@ export function deleteYearly(id) {
 }
 
 export function addQuarterly(fields) {
-  const g = { id: uid(), yearlyId: null, year: new Date().getFullYear(), q: 1, title: '', notes: '',
-    miniGoals: [], targets: [], createdAt: nowISO(), ...fields };
+  const g = { id: uid(), yearlyId: null, year: new Date().getFullYear(), q: null, title: '', notes: '',
+    miniGoals: [], targets: [], done: false, createdAt: nowISO(), ...fields };
+  if (g.order === undefined) g.order = data.quarterlyGoals.filter((x) => x.yearlyId === g.yearlyId).length;
   data.quarterlyGoals.push(g);
   save();
   return g;
@@ -718,10 +722,10 @@ export function targetCount(target, weekStart) {
 // Weeks of a target, from the goal's quarter start to this week (or quarter end).
 export function targetWeeks(goal, target, today = D.todayKey()) {
   // Start from the quarter's first week, or the week the target was added if later
-  let qs = D.startOfWeek(D.quarterStart(goal.year, goal.q));
+  let qs = D.startOfWeek(goal.q ? D.quarterStart(goal.year, goal.q) : `${goal.year}-01-01`);
   const added = target.createdAt || goal.createdAt;
   if (added && D.startOfWeek(D.keyOfISO(added)) > qs) qs = D.startOfWeek(D.keyOfISO(added));
-  const qe = D.quarterEnd(goal.year, goal.q);
+  const qe = goal.q ? D.quarterEnd(goal.year, goal.q) : `${goal.year}-12-31`;
   const lastWeek = D.startOfWeek(today < qe ? today : qe);
   const weeks = [];
   for (let w = qs; w <= lastWeek; w = D.addDays(w, 7)) {
@@ -746,7 +750,10 @@ export function targetStreak(weeks) {
 // Progress of a quarterly goal from 0 to 1 (or null if there is nothing to measure).
 // It averages: mini goals done, and weekly target hit rate (finished weeks).
 export function quarterlyProgress(g, today = D.todayKey()) {
+  if (g.done) return 1;
   const parts = [];
+  const tasks = stepTasks(g.id).filter((t) => !t.repeat);
+  if (tasks.length) parts.push(tasks.filter((t) => t.done).length / tasks.length);
   const minis = g.miniGoals || [];
   if (minis.length) parts.push(minis.filter((m) => m.done).length / minis.length);
   for (const t of g.targets || []) {
@@ -757,9 +764,44 @@ export function quarterlyProgress(g, today = D.todayKey()) {
   return parts.reduce((a, b) => a + b, 0) / parts.length;
 }
 
+// ---------- Steps (sub goals, in order) ----------
+export function stepsFor(yearlyId) {
+  return data.quarterlyGoals.filter((g) => g.yearlyId === yearlyId).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+export function currentStep(yearlyId) {
+  return stepsFor(yearlyId).find((g) => !g.done) || null;
+}
+
+export function stepNumber(g) {
+  return stepsFor(g.yearlyId).findIndex((x) => x.id === g.id) + 1;
+}
+
+export function reorderSteps(ids) {
+  ids.forEach((id, i) => { const g = getQuarterly(id); if (g) g.order = i; });
+  save();
+}
+
+export function setStepDone(id, done) {
+  const g = getQuarterly(id);
+  if (!g) return;
+  g.done = done;
+  g.doneAt = done ? nowISO() : null;
+  save();
+}
+
+// Tasks linked to a step (or one of its weekly targets): open ones first.
+export function stepTasks(id) {
+  const g = getQuarterly(id);
+  const ids = new Set([id, ...((g?.targets) || []).map((t) => t.id)]);
+  return data.tasks.filter((t) => ids.has(t.goalId))
+    .sort((a, b) => (a.done - b.done) || (a.date || '9999').localeCompare(b.date || '9999') || (a.createdAt || '').localeCompare(b.createdAt || ''));
+}
+
 export function yearlyProgress(y, today = D.todayKey()) {
+  // Every step counts; a step with nothing measured yet counts as 0%.
   const vals = data.quarterlyGoals.filter((q) => q.yearlyId === y.id)
-    .map((q) => quarterlyProgress(q, today)).filter((v) => v !== null);
+    .map((q) => quarterlyProgress(q, today) ?? 0);
   if (!vals.length) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
@@ -776,6 +818,48 @@ export function lastGoalActivity(goalId) {
     (g.targets || []).forEach((t) => Object.entries(t.manual || {}).forEach(([w, n]) => { if (n > 0) bump(w); }));
   }
   return last;
+}
+
+// ---------- End-of-day grades ----------
+export const GRADE_LABELS = ['', 'Rough', 'Meh', 'Okay', 'Good', 'Great'];
+
+// What you grade each day: your main goals for that year, plus the day overall.
+export function gradeCategories(key = D.todayKey()) {
+  const year = D.fromKey(key).getFullYear();
+  const goals = yearlyFor(year).map((g) => ({ id: g.id, label: g.title, goal: true }));
+  const cats = goals.length ? goals : data.sections.map((s) => ({ id: s.id, label: s.name, color: s.color }));
+  return [...cats, { id: 'overall', label: 'The day overall' }];
+}
+
+export function getGrade(key) {
+  return data.grades[key] || { scores: {}, note: '' };
+}
+
+export function setGrade(key, catId, score) {
+  const g = data.grades[key] || (data.grades[key] = { scores: {}, note: '' });
+  if (g.scores[catId] === score) delete g.scores[catId]; else g.scores[catId] = score;
+  save();
+}
+
+export function setGradeNote(key, note) {
+  const g = data.grades[key] || (data.grades[key] = { scores: {}, note: '' });
+  g.note = note;
+  saveQuietly();
+}
+
+// Average grade for a category over the last n days (null if none).
+export function gradeAverage(catId, n = 7, today = D.todayKey()) {
+  const vals = [];
+  for (let i = 0; i < n; i++) {
+    const v = data.grades[D.addDays(today, -i)]?.scores?.[catId];
+    if (v) vals.push(v);
+  }
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+// Completed tasks on a day that count toward a main goal (for the review card).
+export function goalDoneOn(yearlyId, key) {
+  return goalCompletions(yearlyId).filter((c) => c.date === key).length;
 }
 
 // ---------- Info ----------
@@ -874,6 +958,19 @@ export function exportJSON() {
   return JSON.stringify({ app: 'life-tracker', exportedAt: nowISO(), ...data }, null, 2);
 }
 
+// Make sure every step (sub goal) has an order number within its main goal.
+function orderSteps() {
+  const byGoal = new Map();
+  for (const g of data.quarterlyGoals) {
+    if (!byGoal.has(g.yearlyId)) byGoal.set(g.yearlyId, []);
+    byGoal.get(g.yearlyId).push(g);
+  }
+  for (const list of byGoal.values()) {
+    list.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || (a.q || 9) - (b.q || 9) || (a.createdAt || '').localeCompare(b.createdAt || ''));
+    list.forEach((g, i) => { g.order = i; });
+  }
+}
+
 export function importJSON(text) {
   const parsed = JSON.parse(text);
   if (!parsed || !Array.isArray(parsed.tasks) || !Array.isArray(parsed.sections)) {
@@ -882,6 +979,7 @@ export function importJSON(text) {
   delete parsed.app;
   delete parsed.exportedAt;
   data = migrate(parsed);
+  orderSteps();
   save();
 }
 

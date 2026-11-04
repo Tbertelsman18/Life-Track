@@ -26,6 +26,8 @@ export const ui = {
   miniMonth: D.todayKey(),
   unscheduledOpen: true,
   showPastDays: false,
+  weekMode: 'week',
+  reviewOpen: null,
   checkEdit: false,
   projectsTab: 'active',
   goalYear: new Date().getFullYear(),

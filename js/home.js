@@ -20,8 +20,13 @@ export function renderHome() {
     const rel = isToday ? 'Today' : ui.date === D.addDays(today, 1) ? 'Tomorrow' : ui.date === D.addDays(today, -1) ? 'Yesterday' : null;
     eyebrow = rel ? `${rel} · ${D.DAY_NAMES_LONG[d.getDay()]}` : `${D.DAY_NAMES_LONG[d.getDay()]} · ${d.getFullYear()}`;
     display = `${D.MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+  } else if (ui.view === 'week' && ui.weekMode === 'next7') {
+    eyebrow = ui.date === today ? 'Next 7 days' : `7 days from ${D.formatMonthDay(ui.date)}`;
+    const e = D.fromKey(D.addDays(ui.date, 6));
+    display = `${D.formatMonthDay(ui.date)} – ${d.getMonth() === e.getMonth() ? e.getDate() : D.formatMonthDay(D.addDays(ui.date, 6))}`;
   } else if (ui.view === 'week') {
-    eyebrow = D.startOfWeek(today) === D.startOfWeek(ui.date) ? 'This week' : String(d.getFullYear());
+    eyebrow = ui.weekMode === 'plan' ? (D.startOfWeek(ui.date) === nextMonday() ? 'Planning next week' : 'Planning')
+      : D.startOfWeek(today) === D.startOfWeek(ui.date) ? 'This week' : String(d.getFullYear());
     display = D.formatWeekRange(ui.date);
   } else {
     eyebrow = String(d.getFullYear());
@@ -29,7 +34,9 @@ export function renderHome() {
   }
 
   const body = ui.view === 'day' ? renderDay() : ui.view === 'week' ? renderWeek() : renderMonth();
-  const onCurrent = ui.view === 'day' ? isToday : ui.view === 'week' ? D.startOfWeek(today) === D.startOfWeek(ui.date) : D.sameMonth(today, ui.date);
+  const onCurrent = ui.view === 'day' ? isToday
+    : ui.view === 'week' ? (ui.weekMode === 'plan' ? D.startOfWeek(ui.date) === nextMonday() : ui.weekMode === 'next7' ? isToday : D.startOfWeek(today) === D.startOfWeek(ui.date))
+    : D.sameMonth(today, ui.date);
 
   return `
     <header class="home-header">
@@ -125,11 +132,10 @@ function renderDay() {
 
   if (isToday) parts.push(renderSummary(today));
   if (isToday && D.weekday(today) === 0) {
-    parts.push(`<button class="banner" data-action="open-planning">
-      ${icon('calendar')}<span><b>It's Sunday.</b> Plan your week</span>${icon('chev-right')}</button>`);
+    parts.push(`<button class="banner" data-action="plan-next-week">
+      ${icon('calendar')}<span><b>It's Sunday.</b> Plan next week</span>${icon('chev-right')}</button>`);
   }
   parts.push(renderDailyCheck(ui.date)); // shows on every day
-  if (isToday) parts.push(renderForecast());
 
   parts.push(`
     <section class="card">
@@ -137,6 +143,8 @@ function renderDay() {
       ${dayItems(ui.date) || `<p class="empty">Nothing planned. Tap <b>+</b> to add a task.</p>`}
     </section>`);
   parts.push(renderUnscheduled());
+  if (isToday) parts.push(renderForecast());
+  if (ui.date <= today) parts.push(renderReview(ui.date));
   return parts.join('');
 }
 
@@ -262,13 +270,64 @@ function renderDailyCheck(key) {
     </ul>`;
   }
 
+  const open = editing || !items.length || S.getData().settings.checkOpen;
+  const all = items.length && doneCount === items.length;
+  const future = key > D.todayKey();
+  const sub = !items.length ? 'Add things you check every day'
+    : future ? `${items.length} item${items.length > 1 ? 's' : ''} · repeats every day`
+    : all ? 'All done for today' : `${doneCount} of ${items.length} done`;
   return `
-    <section class="card">
-      <div class="card-head">
-        <h2 class="card-title">Daily Check ${items.length ? `<span class="count ${doneCount === items.length ? 'all' : ''}">${doneCount}/${items.length}</span>` : ''}</h2>
-        ${items.length || editing ? `<button class="link small" data-action="check-edit">${editing ? 'Done' : 'Edit'}</button>` : ''}
+    <section class="card check-card ${open ? 'open' : ''} ${all ? 'all' : ''}">
+      <div class="check-bar">
+        <button class="check-toggle" data-action="check-open" aria-expanded="${open}">
+          <span class="check-badge">${all ? icon('check') : `${doneCount}/${items.length}`}</span>
+          <span class="check-text"><b>Daily Check</b><small>${sub}</small></span>
+          ${items.length ? `<span class="check-prog"><i style="width:${items.length ? Math.round((doneCount / items.length) * 100) : 0}%"></i></span>` : ''}
+          ${items.length && !editing ? `<span class="caret ${open ? 'up' : ''}">${icon('chev-down')}</span>` : ''}
+        </button>
+        ${open && (items.length || editing) ? `<button class="link small" data-action="check-edit">${editing ? 'Done' : 'Edit'}</button>` : ''}
       </div>
-      ${body}
+      ${open ? `<div class="check-body">${body}</div>` : ''}
+    </section>`;
+}
+
+// ---------------------------------------------------------------- end-of-day review
+function renderReview(key) {
+  const cats = S.gradeCategories(key);
+  const grade = S.getGrade(key);
+  const graded = cats.filter((c) => grade.scores[c.id]).length;
+  const isToday = key === D.todayKey();
+  const evening = new Date().getHours() >= 17;
+  const open = ui.reviewOpen ?? (graded > 0 || !isToday || evening);
+  const sub = graded === cats.length ? 'All graded. Nice reflection.'
+    : graded ? `${graded} of ${cats.length} graded`
+    : isToday ? (evening ? 'How did today go?' : 'Grade your day tonight') : 'Not graded';
+
+  const rows = cats.map((c) => {
+    const v = grade.scores[c.id] || 0;
+    const doneN = c.goal ? S.goalDoneOn(c.id, key) : null;
+    return `<li class="grade-row">
+      <div class="grade-label">
+        <span>${esc(c.label)}</span>
+        <small>${c.goal ? `${doneN} task${doneN === 1 ? '' : 's'} done toward this` : ''}${v ? `${c.goal ? ' · ' : ''}<b>${S.GRADE_LABELS[v]}</b>` : ''}</small>
+      </div>
+      <div class="grade-btns" role="group" aria-label="Grade ${esc(c.label)}">
+        ${[1, 2, 3, 4, 5].map((n) => `<button class="gbtn ${v === n ? 'on' : ''} ${v && n <= v ? 'fill' : ''}" data-action="grade" data-date="${key}" data-cat="${c.id}" data-score="${n}" aria-label="${n}: ${S.GRADE_LABELS[n]}" aria-pressed="${v === n}">${n}</button>`).join('')}
+      </div>
+    </li>`;
+  }).join('');
+
+  return `
+    <section class="card review-card ${open ? 'open' : ''}">
+      <button class="check-toggle" data-action="review-open" aria-expanded="${open}">
+        <span class="check-badge review">${icon('star')}</span>
+        <span class="check-text"><b>End-of-day review</b><small>${sub}</small></span>
+        <span class="caret ${open ? 'up' : ''}">${icon('chev-down')}</span>
+      </button>
+      ${open ? `
+        <p class="hint left">How well did you do in each area? 1 = rough, 5 = great.</p>
+        <ul class="grade-list">${rows}</ul>
+        <textarea class="notes-area small" data-gnote="${key}" rows="2" placeholder="Anything to remember about today? (optional)">${esc(grade.note || '')}</textarea>` : ''}
     </section>`;
 }
 
@@ -304,17 +363,35 @@ function renderForecast() {
 }
 
 // ---------------------------------------------------------------- week
+export function nextMonday(k = D.todayKey()) {
+  return D.addDays(D.startOfWeek(k), 7);
+}
+
 function renderWeek() {
-  const start = D.startOfWeek(ui.date);
   const today = D.todayKey();
-  const all = Array.from({ length: 7 }, (_, i) => D.addDays(start, i));
-  // In the current week, days that have passed are hidden (they come back if you tap "Show").
-  const pastDays = all.filter((k) => k < today);
-  const isThisWeek = all.includes(today);
-  const days = isThisWeek && !ui.showPastDays ? all.filter((k) => k >= today) : all;
-  const toggle = isThisWeek && pastDays.length ? `<button class="past-toggle" data-action="toggle-past-days">
-      ${ui.showPastDays ? `Hide earlier days` : `Show ${pastDays.length} earlier day${pastDays.length > 1 ? 's' : ''}`}</button>` : '';
-  return toggle + days.map((k) => {
+  const mode = ui.weekMode || 'week';
+  const modes = [['week', 'This week'], ['next7', 'Next 7 days'], ['plan', 'Plan next week']].map(([id, label]) => `
+    <button class="seg-btn ${mode === id ? 'on' : ''}" data-action="week-mode" data-mode="${id}">${label}</button>`).join('');
+  const switcher = `<div class="seg small week-modes">${modes}</div>`;
+
+  let days, toggle = '';
+  if (mode === 'next7') {
+    days = Array.from({ length: 7 }, (_, i) => D.addDays(ui.date, i));
+  } else {
+    const all = Array.from({ length: 7 }, (_, i) => D.addDays(D.startOfWeek(ui.date), i));
+    days = all;
+    if (mode === 'week') {
+      // In the current week, days that have passed are hidden (tap "Show" to see them).
+      const pastDays = all.filter((k) => k < today);
+      const isThisWeek = all.includes(today);
+      if (isThisWeek && !ui.showPastDays) days = all.filter((k) => k >= today);
+      if (isThisWeek && pastDays.length) toggle = `<button class="past-toggle" data-action="toggle-past-days">
+        ${ui.showPastDays ? `Hide earlier days` : `Show ${pastDays.length} earlier day${pastDays.length > 1 ? 's' : ''}`}</button>`;
+    }
+  }
+  const planning = mode === 'plan';
+
+  const cards = days.map((k) => {
     const tasks = S.tasksOn(k);
     const d = D.fromKey(k);
     const items = dayItems(k, { compact: true });
@@ -323,12 +400,40 @@ function renderWeek() {
         <button class="week-head" data-action="open-day" data-date="${k}">
           <span class="wd">${D.DAY_NAMES[d.getDay()]}</span>
           <span class="wn">${d.getDate()}</span>
+          ${S.blockingEventsOn(k).length ? `<span class="away">${esc(S.blockingEventsOn(k)[0].title)}</span>` : ''}
           <span class="wc">${tasks.length ? `${tasks.filter((t) => S.isDoneOn(t, k)).length}/${tasks.length}` : ''}</span>
         </button>
-        ${weekCheckLine(k)}
-        ${items || `<button class="add-inline" data-action="add-on" data-date="${k}">+ Add</button>`}
+        ${planning ? '' : weekCheckLine(k)}
+        ${items}
+        ${planning ? `<form class="inline-add" data-form="plan-add" data-date="${k}">
+            <input name="title" placeholder="Add to ${D.DAY_NAMES_LONG[d.getDay()]}" autocomplete="off" enterkeyhint="done">
+            <input name="time" type="time" class="time-mini" aria-label="Time (optional)">
+            <button class="link strong" type="submit">Add</button>
+          </form>`
+          : items ? '' : `<button class="add-inline" data-action="add-on" data-date="${k}">+ Add</button>`}
       </section>`;
-  }).join('') + renderUnscheduled();
+  }).join('');
+
+  return switcher + (planning ? renderToSchedule(days) : toggle) + cards + (planning ? '' : renderUnscheduled());
+}
+
+// Plan mode: unscheduled and overdue tasks, each with one-tap day buttons.
+function renderToSchedule(days) {
+  const today = D.todayKey();
+  const overdue = S.getData().tasks.filter((t) => !t.repeat && !t.done && t.date && t.date < today);
+  const unscheduled = S.unscheduledTasks().filter((t) => !t.done);
+  const list = [...overdue, ...unscheduled];
+  return `
+    <section class="card plan-card">
+      <h2 class="card-title">${icon('calendar')} To schedule <span class="count">${list.length}</span></h2>
+      ${list.length ? `<ul class="sched-list">${list.map((t) => `
+        <li style="--c:${sectionColor(t.sectionId)}">
+          <div class="sched-title"><span class="swatch" style="background:var(--c)"></span><span>${esc(t.title)}</span>
+            ${t.date ? `<small class="pushed">was ${D.formatMonthDay(t.date)}</small>` : '<small>no date</small>'}</div>
+          <div class="sched-days">${days.map((k) => `<button class="chip" data-action="plan-assign" data-id="${t.id}" data-date="${k}" aria-label="Move to ${D.formatShort(k)}">${D.DAY_NAMES[D.weekday(k)].slice(0, 2)}</button>`).join('')}</div>
+        </li>`).join('')}</ul>`
+      : '<p class="empty small">Nothing waiting. Type straight into each day below.</p>'}
+    </section>`;
 }
 
 // A small Daily Check line for each day in Week view.
@@ -427,7 +532,7 @@ export const homeActions = {
   view: (el) => { ui.view = el.dataset.view; ui.miniOpen = false; },
   prev: () => { ui.date = ui.view === 'month' ? D.addMonths(ui.date, -1) : D.addDays(ui.date, ui.view === 'week' ? -7 : -1); },
   next: () => { ui.date = ui.view === 'month' ? D.addMonths(ui.date, 1) : D.addDays(ui.date, ui.view === 'week' ? 7 : 1); },
-  today: () => { ui.date = D.todayKey(); ui.miniMonth = ui.date; },
+  today: () => { ui.date = ui.view === 'week' && ui.weekMode === 'plan' ? nextMonday() : D.todayKey(); ui.miniMonth = ui.date; },
   'toggle-mini': () => { ui.miniOpen = !ui.miniOpen; ui.miniMonth = ui.date; },
   'mini-prev': () => { ui.miniMonth = D.addMonths(ui.miniMonth, -1); },
   'mini-next': () => { ui.miniMonth = D.addMonths(ui.miniMonth, 1); },
@@ -436,6 +541,19 @@ export const homeActions = {
   'open-day': (el) => { ui.tab = 'home'; ui.page = null; ui.date = el.dataset.date; ui.view = 'day'; },
   'toggle-unscheduled': () => { ui.unscheduledOpen = !ui.unscheduledOpen; },
   'toggle-past-days': () => { ui.showPastDays = !ui.showPastDays; },
+  'week-mode': (el) => {
+    ui.weekMode = el.dataset.mode;
+    ui.date = ui.weekMode === 'plan' ? nextMonday() : D.todayKey();
+  },
+  'plan-next-week': () => { ui.tab = 'home'; ui.page = null; ui.view = 'week'; ui.weekMode = 'plan'; ui.date = nextMonday(); window.scrollTo(0, 0); },
+  'plan-assign': (el) => {
+    S.updateTask(el.dataset.id, { date: el.dataset.date });
+    toast(`Moved to ${D.formatShort(el.dataset.date)}`);
+    return false;
+  },
+  'check-open': () => { if (ui.checkEdit) return false; S.setSetting('checkOpen', !S.getData().settings.checkOpen); return false; },
+  'review-open': (el) => { ui.reviewOpen = el.getAttribute('aria-expanded') !== 'true'; },
+  grade: (el) => { S.setGrade(el.dataset.date, el.dataset.cat, Number(el.dataset.score)); return false; },
   toggle: (el) => { S.toggleDone(el.dataset.id, el.dataset.date || null); return false; },
   edit: (el) => { openTaskSheet({ id: el.dataset.id, date: el.dataset.date || null }); return false; },
   'edit-event': (el) => { openEventSheet({ id: el.dataset.id }); return false; },
@@ -458,6 +576,13 @@ export const homeActions = {
 };
 
 export const homeForms = {
+  'plan-add': (form) => {
+    const title = form.title.value.trim();
+    if (!title) return;
+    const date = form.dataset.date;
+    S.addTask({ title, date, time: form.time.value || null });
+    setTimeout(() => document.querySelector(`[data-form="plan-add"][data-date="${date}"] input[name=title]`)?.focus(), 0);
+  },
   'check-add': (form) => {
     const v = form.title.value.trim();
     if (v) S.addCheckItem(v);

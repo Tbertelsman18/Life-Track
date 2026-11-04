@@ -7,7 +7,7 @@ import { openSectionSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.5 (Nov 5)';
+export const APP_VERSION = '1.6 (Nov 5)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -121,6 +121,7 @@ export function renderPlanning() {
   return `
     ${pageHeader('Sunday Planning', { backLabel: 'More' })}
     <div class="view-body">
+      <button class="btn wide primary" data-action="plan-next-week">${icon('calendar')} Plan next week day by day</button>
       <section class="card">
         <h2 class="card-title">Next 4 weeks</h2>
         <div class="plan-head">${D.WEEK_ORDER.map((w) => `<span>${D.DAY_NAMES[w][0]}</span>`).join('')}</div>
@@ -247,12 +248,35 @@ export function renderHistory() {
             <b>${r.n}</b></li>`).join('')}</ul>` : '<p class="empty small">Nothing completed this week.</p>'}
       </section>
 
+      ${gradeSummary()}
+
       <section class="card">
         <h2 class="card-title">Most pushed off</h2>
         ${pushedList(5)}
         <button class="add-inline" data-action="open-pushed">See all</button>
       </section>
     </div>`;
+}
+
+// Self-grades: last 7 days' average per category, with a 14-day strip.
+function gradeSummary() {
+  const today = D.todayKey();
+  const cats = S.gradeCategories(today);
+  const days = Array.from({ length: 14 }, (_, i) => D.addDays(today, i - 13));
+  const any = days.some((k) => Object.keys(S.getGrade(k).scores).length);
+  if (!any) return `<section class="card"><h2 class="card-title">Self-grades</h2>
+    <p class="empty small">Grade your day in the End-of-day review on Home and your trends show here.</p></section>`;
+  return `<section class="card">
+    <h2 class="card-title">Self-grades · last 14 days</h2>
+    <ul class="grade-sum">${cats.map((c) => {
+      const avg = S.gradeAverage(c.id, 7);
+      return `<li><span class="gs-name">${esc(c.label)}</span>
+        <span class="gs-dots">${days.map((k) => { const v = S.getGrade(k).scores[c.id] || 0;
+          return `<i class="g${v}" title="${D.formatShort(k)}: ${v ? S.GRADE_LABELS[v] : 'not graded'}"></i>`; }).join('')}</span>
+        <b>${avg ? avg.toFixed(1) : '–'}</b></li>`;
+    }).join('')}</ul>
+    <p class="hint left">Darker = higher grade. Number = this week's average (out of 5).</p>
+  </section>`;
 }
 
 function pushedList(limit) {

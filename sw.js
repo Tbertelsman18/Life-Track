@@ -1,7 +1,7 @@
 // Service worker: lets the app open with no internet connection.
 // When online it always loads the newest version; when offline it uses
 // the copy saved on the phone. Change VERSION after big updates.
-const VERSION = 'life-tracker-v5';
+const VERSION = 'life-tracker-v6';
 const FILES = [
   './',
   'index.html',

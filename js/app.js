@@ -7,7 +7,7 @@ import { ui, hooks, $, back, closeSheet } from './ui.js';
 import { openAddSheet } from './forms.js';
 import { renderHome, afterHome, homeActions, homeForms } from './home.js';
 import { renderProjects, renderProjectPage, afterProjects, projectActions, projectForms } from './projects.js';
-import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, goalActions, goalForms } from './goals.js';
+import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, goalActions, goalForms, afterGoals } from './goals.js';
 import { renderLists, renderListPage, afterLists, listActions, listForms } from './lists.js';
 import { renderMore, renderPlanning, renderHistory, renderPushed, moreActions } from './more.js';
 
@@ -56,6 +56,7 @@ function render() {
   if (!ui.page && ui.tab === 'home') afterHome();
   if (!ui.page && ui.tab === 'projects') afterProjects();
   if (ui.tab === 'lists') afterLists();
+  if (ui.page?.type === 'yearly') afterGoals();
 
   document.querySelectorAll('.tabbar button').forEach((b) => {
     b.classList.toggle('active', b.dataset.tab === ui.tab);
@@ -106,6 +107,12 @@ document.addEventListener('input', (e) => {
   clearTimeout(notesTimer);
   notesTimer = setTimeout(() => S.saveQuietly(), 400);
 });
+// End-of-day review note saves as you type
+document.addEventListener('input', (e) => {
+  const ta = e.target.closest('[data-gnote]');
+  if (ta) S.setGradeNote(ta.dataset.gnote, ta.value);
+});
+
 document.addEventListener('change', (e) => {
   const ta = e.target.closest('[data-notes]');
   if (ta) S.updateProject(ta.dataset.id, { notes: ta.value }, { worked: true });

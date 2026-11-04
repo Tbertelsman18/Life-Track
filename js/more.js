@@ -6,6 +6,9 @@ import { ui, esc, icon, go, pct, progressBar, sectionColor, pageHeader, toast } 
 import { openSectionSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
+// Shown at the bottom of More, so you can tell which version is loaded.
+export const APP_VERSION = '1.5 (Nov 5)';
+
 // ---------------------------------------------------------------- menu
 export function renderMore() {
   const data = S.getData();
@@ -59,7 +62,7 @@ export function renderMore() {
       <p class="hint">Export saves a backup file. Choose <b>Save to Files</b> and pick iCloud Drive to keep it safe.
       Import replaces everything in the app with the backup you choose.</p>
 
-      <p class="hint center">Life Tracker · ${data.tasks.length} tasks · ${data.events.length} events · ${data.projects.length} projects</p>
+      <p class="hint center">Life Tracker · version ${APP_VERSION}<br>${data.tasks.length} tasks · ${data.events.length} events · ${data.projects.length} projects</p>
     </div>`;
 }
 

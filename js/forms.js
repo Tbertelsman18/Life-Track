@@ -2,7 +2,7 @@
 
 import * as D from './dates.js';
 import * as S from './store.js';
-import { $, esc, openSheet, closeSheet, sheetTop, sectionOptions, wireSectionSelect, toast } from './ui.js';
+import { $, esc, icon, openSheet, closeSheet, sheetTop, sectionOptions, wireSectionSelect, toast } from './ui.js';
 
 // ---------------------------------------------------------------- dropdown options
 function projectOptions(selected) {
@@ -49,6 +49,7 @@ function kindSwitch(kind) {
   return `<div class="seg kind-seg">
     <button type="button" class="seg-btn ${kind === 'task' ? 'on' : ''}" data-kind="task">Task</button>
     <button type="button" class="seg-btn ${kind === 'event' ? 'on' : ''}" data-kind="event">Event</button>
+    <button type="button" class="seg-btn ${kind === 'daily' ? 'on' : ''}" data-kind="daily">Daily Check</button>
   </div>`;
 }
 
@@ -56,9 +57,10 @@ function wireKindSwitch(form, current, ctx) {
   form.querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => {
     if (b.dataset.kind === current) return;
     const title = form.title.value;
-    const date = form.date.value || ctx.date;
+    const date = (form.date && form.date.value) || ctx.date;
     const defaults = { ...ctx.defaults, title };
     if (b.dataset.kind === 'event') openEventSheet({ date, defaults, allowSwitch: true });
+    else if (b.dataset.kind === 'daily') openDailySheet({ date, defaults });
     else openTaskSheet({ date, defaults, allowSwitch: true });
   }));
 }
@@ -130,6 +132,8 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
           <input type="date" name="until" value="${v.repeat?.until || ''}">
         </label>
       </div>
+
+      ${importantToggle(v.important)}
 
       <label class="field-group">
         <textarea name="notes" rows="3" placeholder="Notes">${esc(v.notes)}</textarea>
@@ -208,6 +212,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       sectionId: form.sectionId.value || null,
       projectId: form.projectId.value || null,
       goalId: form.goalId.value || null,
+      important: form.important.checked,
       repeat,
     };
     if (t) S.updateTask(t.id, fields);
@@ -288,6 +293,8 @@ export function openEventSheet({ id = null, date = D.todayKey(), defaults = {}, 
         </div>
       </div>
 
+      ${importantToggle(v.important)}
+
       <label class="field-group">
         <textarea name="notes" rows="3" placeholder="Notes">${esc(v.notes)}</textarea>
       </label>
@@ -329,7 +336,7 @@ export function openEventSheet({ id = null, date = D.todayKey(), defaults = {}, 
     if (endDate === form.date.value) endDate = null;
     const fields = {
       title, date: form.date.value, endDate, time: form.time.value || null,
-      sectionId: form.sectionId.value || null, lead, notes: form.notes.value.trim(),
+      sectionId: form.sectionId.value || null, lead, notes: form.notes.value.trim(), important: form.important.checked,
     };
     if (ev) S.updateEvent(ev.id, fields);
     else S.addEvent(fields);
@@ -338,6 +345,42 @@ export function openEventSheet({ id = null, date = D.todayKey(), defaults = {}, 
 
   form.querySelector('[data-act="delete"]')?.addEventListener('click', () => {
     if (confirm(`Delete "${ev.title}"?`)) { S.deleteEvent(ev.id); closeSheet(); }
+  });
+}
+
+function importantToggle(on) {
+  return `<div class="field-group">
+    <label class="field toggle-field">
+      <span class="imp-label">${icon('star')} Important<small>Shows in Month view</small></span>
+      <input type="checkbox" name="important" class="switch" ${on ? 'checked' : ''}>
+    </label>
+  </div>`;
+}
+
+// Add an item to the Daily Check (it shows every day until removed).
+export function openDailySheet({ date = D.todayKey(), defaults = {} } = {}) {
+  const items = S.getData().dailyCheck.items;
+  openSheet(`
+    <form class="sheet-form" id="daily-form" autocomplete="off">
+      ${sheetTop('New', { saveLabel: 'Add' })}
+      ${kindSwitch('daily')}
+      <input class="title-input" name="title" placeholder="Something to check every day" value="${esc(defaults.title || '')}" required>
+      <p class="hint">It shows on your Daily Check <b>every day</b> until you remove it.</p>
+      ${items.length ? `<div class="field-group pad">
+        <div class="setting-label">Already on your Daily Check</div>
+        <ul class="mini-list">${items.map((i) => `<li>${icon('check')} ${esc(i.title)}</li>`).join('')}</ul>
+      </div>` : ''}
+    </form>`);
+  const form = $('#daily-form');
+  setTimeout(() => form.title.focus(), 50);
+  wireKindSwitch(form, 'daily', { date, defaults });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = form.title.value.trim();
+    if (!title) return;
+    S.addCheckItem(title);
+    closeSheet();
+    toast(`Added to your Daily Check`);
   });
 }
 

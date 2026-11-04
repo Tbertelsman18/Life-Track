@@ -307,8 +307,14 @@ function renderForecast() {
 function renderWeek() {
   const start = D.startOfWeek(ui.date);
   const today = D.todayKey();
-  const days = Array.from({ length: 7 }, (_, i) => D.addDays(start, i));
-  return days.map((k) => {
+  const all = Array.from({ length: 7 }, (_, i) => D.addDays(start, i));
+  // In the current week, days that have passed are hidden (they come back if you tap "Show").
+  const pastDays = all.filter((k) => k < today);
+  const isThisWeek = all.includes(today);
+  const days = isThisWeek && !ui.showPastDays ? all.filter((k) => k >= today) : all;
+  const toggle = isThisWeek && pastDays.length ? `<button class="past-toggle" data-action="toggle-past-days">
+      ${ui.showPastDays ? `Hide earlier days` : `Show ${pastDays.length} earlier day${pastDays.length > 1 ? 's' : ''}`}</button>` : '';
+  return toggle + days.map((k) => {
     const tasks = S.tasksOn(k);
     const d = D.fromKey(k);
     const items = dayItems(k, { compact: true });
@@ -336,31 +342,66 @@ function weekCheckLine(k) {
 }
 
 // ---------------------------------------------------------------- month
+// Important events and tasks on a day (the only things Month view shows).
+function importantOn(k) {
+  return [
+    ...S.eventsOn(k).filter((e) => e.important).map((e) => ({ kind: 'event', id: e.id, title: e.title, color: sectionColor(e.sectionId), time: e.time, start: e.date, end: S.eventLast(e) })),
+    ...S.tasksOn(k).filter((t) => t.important).map((t) => ({ kind: 'task', id: t.id, title: t.title, color: sectionColor(t.sectionId), time: t.time, done: S.isDoneOn(t, k), repeat: Boolean(t.repeat) })),
+  ];
+}
+
 function renderMonth() {
   const today = D.todayKey();
   const head = D.WEEK_ORDER.map((w) => `<div class="m-dow">${D.DAY_NAMES[w][0]}</div>`).join('');
   const cells = D.monthGrid(ui.date).map((k) => {
-    const chips = [
-      ...S.eventsOn(k).map((e) => ({ title: e.title, color: sectionColor(e.sectionId), ev: true })),
-      ...S.milestonesOn(k).map((m) => ({ title: '⚑ ' + m.title, color: m.kind === 'goal' ? 'var(--accent)' : sectionColor(m.sectionId), done: m.done })),
-      ...S.tasksOn(k).map((t) => ({ title: t.title, color: sectionColor(t.sectionId), done: S.isDoneOn(t, k) })),
-    ];
-    const shown = chips.slice(0, 3).map((c) =>
-      `<span class="m-chip ${c.done ? 'done' : ''} ${c.ev ? 'ev' : ''}" style="--c:${c.color}">${esc(c.title)}</span>`).join('');
-    const more = chips.length > 3 ? `<span class="m-more">+${chips.length - 3}</span>` : '';
-    const cls = ['m-cell', D.sameMonth(k, ui.date) ? '' : 'other', k === today ? 'today' : '', k === ui.date ? 'sel' : ''].join(' ');
-    return `<button class="${cls}" data-action="select-date" data-date="${k}">
+    const items = importantOn(k);
+    const shown = items.slice(0, 2).map((c) =>
+      `<span class="m-chip ${c.done ? 'done' : ''} ${c.kind === 'event' ? 'ev' : ''}" style="--c:${c.color}">${esc(c.title)}</span>`).join('');
+    const more = items.length > 2 ? `<span class="m-more">+${items.length - 2}</span>` : '';
+    const cls = ['m-cell', D.sameMonth(k, ui.date) ? '' : 'other', k === today ? 'today' : '', k < today ? 'past' : ''].join(' ');
+    return `<button class="${cls}" data-action="open-day" data-date="${k}" aria-label="${esc(D.formatLong(k))}${items.length ? `, ${items.length} important` : ''}">
       <span class="m-num">${D.fromKey(k).getDate()}</span>${shown}${more}
     </button>`;
   }).join('');
 
+  // The month's important dates as a list ("things to look forward to")
+  const first = D.startOfMonth(ui.date);
+  const n = D.daysInMonth(ui.date);
+  const seen = new Set();
+  const list = [];
+  for (let i = 0; i < n; i++) {
+    const k = D.addDays(first, i);
+    for (const it of importantOn(k)) {
+      const key = it.kind + it.id + (it.repeat ? '' : '');
+      if (seen.has(key)) continue; // multi-day events and repeating tasks listed once
+      seen.add(key);
+      list.push({ ...it, date: k });
+    }
+  }
+  const monthName = D.MONTH_NAMES[D.fromKey(ui.date).getMonth()];
+
   return `
     <div class="month-grid">${head}${cells}</div>
     <section class="card">
-      <h2 class="card-title">${esc(D.formatLong(ui.date))}</h2>
-      ${dayItems(ui.date) || `<p class="empty">Nothing planned.</p>`}
-      <button class="add-inline" data-action="add-on" data-date="${ui.date}">+ Add to this day</button>
-    </section>`;
+      <h2 class="card-title">${icon('star')} Important in ${esc(monthName)}</h2>
+      ${list.length ? `<ul class="imp-list">${list.map((it) => {
+        const d = D.fromKey(it.date);
+        const multi = it.end && it.end !== it.start;
+        const past = (it.end || it.date) < today;
+        return `<li class="${past ? 'past' : ''}" style="--c:${it.color}">
+          <button class="imp-row" data-action="${it.kind === 'event' ? 'edit-event' : 'edit'}" data-id="${it.id}" data-date="${it.date}">
+            <span class="imp-date"><b>${d.getDate()}</b><small>${D.DAY_NAMES[d.getDay()]}</small></span>
+            <span class="task-main-inner">
+              <span class="task-title">${esc(it.title)}</span>
+              <span class="task-meta">${multi ? `${D.formatMonthDay(it.start)} – ${D.formatMonthDay(it.end)}` : it.kind === 'event' ? 'Event' : 'Task'}${it.time ? ' · ' + D.formatTime(it.time) : ''}${it.repeat ? ' · repeats' : ''}</span>
+            </span>
+            ${!past ? `<span class="fc-when ${/^(Today|Tomorrow)/.test(D.countdown(today, it.date)) ? 'soon' : ''}">${it.date <= today && it.end && it.end >= today ? 'Now' : D.countdown(today, it.date)}</span>` : ''}
+          </button>
+        </li>`;
+      }).join('')}</ul>`
+      : `<p class="empty">Nothing marked important this month. When you add an event or task, turn on <b>Important</b> and it will show here.</p>`}
+    </section>
+    <p class="hint center">Tap any day to see everything planned for it.</p>`;
 }
 
 function renderUnscheduled() {
@@ -394,6 +435,7 @@ export const homeActions = {
   'select-date': (el) => { ui.date = el.dataset.date; },
   'open-day': (el) => { ui.tab = 'home'; ui.page = null; ui.date = el.dataset.date; ui.view = 'day'; },
   'toggle-unscheduled': () => { ui.unscheduledOpen = !ui.unscheduledOpen; },
+  'toggle-past-days': () => { ui.showPastDays = !ui.showPastDays; },
   toggle: (el) => { S.toggleDone(el.dataset.id, el.dataset.date || null); return false; },
   edit: (el) => { openTaskSheet({ id: el.dataset.id, date: el.dataset.date || null }); return false; },
   'edit-event': (el) => { openEventSheet({ id: el.dataset.id }); return false; },

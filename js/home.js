@@ -268,6 +268,21 @@ export function taskRow(t, key, { showDate = false, num = null, drag = false } =
 const repeatLabel = (days) => D.daysLabel(days);
 
 // ---------------------------------------------------------------- daily check
+// Routine items grouped by category: [{ name, items }], uncategorized first.
+function byCategory(items) {
+  const groups = new Map([['', []]]);
+  for (const c of S.routineCategories()) groups.set(c, []);
+  for (const i of items) groups.get((i.category || '').trim())?.push(i);
+  return [...groups].filter(([, list]) => list.length).map(([name, list]) => ({ name, items: list }));
+}
+// "Since Monday" under a weekly routine that's waiting to be done.
+function carriedNote(i, key) {
+  if (!S.routineCarried(i, key)) return '';
+  const due = S.routineDueSince(i, key);
+  return `<span class="task-meta carried">Since ${esc(D.DAY_NAMES_LONG[D.weekday(due)])}</span>`;
+}
+const catHead = (name) => (name ? `<li class="cat-head">${esc(name)}</li>` : '');
+
 // Routines: simple things you repeat on set days each week. Only the items
 // for this day's weekday show; "Edit" shows them all with their days.
 function renderDailyCheck(key) {
@@ -278,7 +293,7 @@ function renderDailyCheck(key) {
 
   let body;
   if (!everything.length && !editing) {
-    body = `<p class="empty">Simple things you repeat each week, like checking results every weekday or a water change on Saturdays. <button class="link inline" data-action="check-add-item">Add one</button></p>`;
+    body = `<p class="empty">Simple things you repeat each week, like checking results every weekday or a fish tank water change on Mondays. <button class="link inline" data-action="check-add-item">Add one</button></p>`;
   } else if (editing) {
     body = `
       <ul class="task-list check-edit" id="check-sort">
@@ -286,7 +301,7 @@ function renderDailyCheck(key) {
           <li class="task" data-id="${i.id}">
             <span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>
             <button class="task-main" data-action="check-rename" data-id="${i.id}"><span class="task-title">${esc(i.title)}</span>
-              <span class="task-meta">${icon('repeat')} ${esc(D.daysLabel(S.routineDays(i)))}</span></button>
+              <span class="task-meta">${icon('repeat')} ${esc(D.daysLabel(S.routineDays(i)))}${S.isWeeklyRoutine(i) ? ' · until done' : ''}${i.category ? ` · ${esc(i.category)}` : ''}</span></button>
             <button class="icon-btn sm danger" data-action="check-remove" data-id="${i.id}" aria-label="Remove">${icon('x')}</button>
           </li>`).join('')}
       </ul>
@@ -297,21 +312,21 @@ function renderDailyCheck(key) {
   } else if (key > D.todayKey()) {
     // A future day: show the same items, ready to check off on the day.
     body = `<ul class="task-list compact">
-      ${items.map((i) => `<li class="task upcoming" style="--c:var(--accent)">
+      ${byCategory(items).map((g) => catHead(g.name) + g.items.map((i) => `<li class="task upcoming" style="--c:var(--accent)">
           <span class="check" aria-hidden="true"></span>
-          <span class="task-main static"><span class="task-title">${esc(i.title)}</span></span>
-        </li>`).join('')}
+          <span class="task-main static"><span class="task-title">${esc(i.title)}</span>${carriedNote(i, key)}</span>
+        </li>`).join('')).join('')}
     </ul>
     <p class="hint left">You can check these off on ${esc(D.formatShort(key))}.</p>`;
   } else {
     body = `<ul class="task-list compact">
-      ${items.map((i) => {
+      ${byCategory(items).map((g) => catHead(g.name) + g.items.map((i) => {
         const on = S.isChecked(i.id, key);
         return `<li class="task ${on ? 'done' : ''}" style="--c:var(--accent)">
           <button class="check" data-action="check-toggle" data-id="${i.id}" data-date="${key}" aria-label="${on ? 'Uncheck' : 'Check'}">${on ? icon('check') : ''}</button>
-          <button class="task-main" data-action="check-toggle" data-id="${i.id}" data-date="${key}"><span class="task-title">${esc(i.title)}</span></button>
+          <button class="task-main" data-action="check-toggle" data-id="${i.id}" data-date="${key}"><span class="task-title">${esc(i.title)}</span>${carriedNote(i, key)}</button>
         </li>`;
-      }).join('')}
+      }).join('')).join('')}
     </ul>`;
   }
 

@@ -389,7 +389,10 @@ function importantToggle(on) {
 // each week (e.g. "Check Ava results" on weekdays, "Water change" on Saturday).
 export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} } = {}) {
   const item = id ? S.getData().dailyCheck.items.find((i) => i.id === id) : null;
-  const days = new Set(item ? S.routineDays(item) : S.ALL_DAYS);
+  // A new routine starts with no days picked: tap the days it should show on.
+  const days = new Set(item ? S.routineDays(item) : []);
+  let category = item ? (item.category || '') : (defaults.category || '');
+  const cats = () => [...new Set([...S.routineCategories(), category].filter(Boolean))];
   const presets = [['Every day', S.ALL_DAYS], ['Weekdays', [1, 2, 3, 4, 5]], ['Weekends', [0, 6]]];
   openSheet(`
     <form class="sheet-form" id="daily-form" autocomplete="off">
@@ -405,7 +408,13 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
             <button type="button" class="chip" data-preset="${i}">${label}</button>`).join('')}</div>
         </div>
       </div>
-      <p class="hint">It shows in <b>Routines</b> on these days every week, and you check it off each time.</p>
+      <div class="field-group">
+        <div class="field col">
+          <span>Category <small class="opt">optional</small></span>
+          <div class="cat-chips"></div>
+        </div>
+      </div>
+      <p class="hint days-hint"></p>
       ${item ? `<button type="button" class="btn danger wide" data-act="delete">Delete from Routines</button>` : ''}
     </form>`);
   const form = $('#daily-form');
@@ -418,8 +427,24 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', on);
     });
-    form.querySelector('.days-now').textContent = days.size ? D.daysLabel([...days]) : 'Pick at least one day';
+    form.querySelector('.days-now').textContent = days.size ? D.daysLabel([...days]) : '(tap the days)';
+    form.querySelector('.days-hint').innerHTML = days.size === 1
+      ? 'Shows up every week on that day and <b>stays on your list until you check it off</b>.'
+      : days.size ? 'Shows up on these days every week, all year. Check it off each time.'
+      : 'Tap the days it should show up on. It repeats every week, all year.';
   };
+  const paintCats = () => {
+    const box = form.querySelector('.cat-chips');
+    box.innerHTML = [['', 'None'], ...cats().map((c) => [c, c])].map(([v, label]) => `
+      <button type="button" class="chip ${category === v ? 'on' : ''}" data-cat="${esc(v)}" aria-pressed="${category === v}">${esc(label)}</button>`).join('')
+      + '<button type="button" class="chip add" data-cat-new>+ New</button>';
+    box.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { category = b.dataset.cat; paintCats(); }));
+    box.querySelector('[data-cat-new]').addEventListener('click', () => {
+      const name = prompt('New category (e.g. Work, Maintenance):');
+      if (name && name.trim()) { category = name.trim(); paintCats(); }
+    });
+  };
+  paintCats();
   form.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => {
     const d = Number(b.dataset.day);
     if (days.has(d)) days.delete(d); else days.add(d);
@@ -440,8 +465,8 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
     const title = form.title.value.trim();
     if (!title) return;
     if (!days.size) { toast('Pick at least one day'); return; }
-    if (item) S.updateCheckItem(item.id, { title, days: [...days] });
-    else { S.addCheckItem(title, [...days]); toast('Added to your Routines'); }
+    if (item) S.updateCheckItem(item.id, { title, days: [...days], category });
+    else { S.addCheckItem(title, [...days], category); toast('Added to your Routines'); }
     closeSheet();
   });
 }

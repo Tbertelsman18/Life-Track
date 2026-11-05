@@ -85,6 +85,8 @@ function defaultData() {
 
 let data = load();
 orderSteps();
+// Routines made before "stay until done" existed start counting from today.
+for (const i of data.dailyCheck.items) if (!i.since) i.since = D.todayKey();
 
 function load() {
   try {
@@ -501,22 +503,55 @@ export function routineDays(item) {
   return Array.isArray(item.days) && item.days.length ? item.days : ALL_DAYS;
 }
 
+// A routine on just one day a week (like a fish tank water change) stays on
+// your list from that day until you check it off, then waits for next week.
+export function isWeeklyRoutine(item) {
+  return routineDays(item).length === 1;
+}
+
+// The day this routine was last due, on or before `key` (null if not yet due).
+export function routineDueSince(item, key) {
+  const days = routineDays(item);
+  for (let n = 0; n < 7; n++) {
+    const k = D.addDays(key, -n);
+    if (item.since && k < item.since) return null;
+    if (days.includes(D.weekday(k))) return k;
+  }
+  return null;
+}
+
+// Is a weekly routine showing on `key` only because it hasn't been done yet?
+export function routineCarried(item, key) {
+  if (!isWeeklyRoutine(item)) return false;
+  const due = routineDueSince(item, key);
+  if (!due || due === key) return false;
+  for (let k = due; k < key; k = D.addDays(k, 1)) if (isChecked(item.id, k)) return false;
+  return true;
+}
+
 // The routine items that show on a given day, in your order.
 export function routinesOn(key) {
   const wd = D.weekday(key);
-  return data.dailyCheck.items.filter((i) => routineDays(i).includes(wd));
+  return data.dailyCheck.items.filter((i) => routineDays(i).includes(wd) || routineCarried(i, key));
 }
 
-export function addCheckItem(title, days = ALL_DAYS) {
-  data.dailyCheck.items.push({ id: uid(), title: title.trim(), days: [...days].sort() });
+// Routine categories in the order they first appear (e.g. Work, Maintenance).
+export function routineCategories() {
+  return [...new Set(data.dailyCheck.items.map((i) => (i.category || '').trim()).filter(Boolean))];
+}
+
+export function addCheckItem(title, days = ALL_DAYS, category = '') {
+  data.dailyCheck.items.push({ id: uid(), title: title.trim(), days: [...days].sort(),
+    category: (category || '').trim(), since: D.todayKey() });
   save();
 }
 
-export function updateCheckItem(id, { title, days }) {
+export function updateCheckItem(id, { title, days, category }) {
   const i = data.dailyCheck.items.find((x) => x.id === id);
   if (!i) return;
   if (title !== undefined) i.title = title.trim();
   if (days !== undefined) i.days = [...days].sort();
+  if (category !== undefined) i.category = (category || '').trim();
   save();
 }
 

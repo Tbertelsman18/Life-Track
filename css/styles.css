@@ -812,3 +812,13 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .notes-box textarea { resize: none; line-height: 1.45; min-height: 96px; }
 .task-meta .has-notes { display: inline-flex; color: var(--muted); }
 .field-actions.inset { padding: 12px 0 0; }
+
+/* Routines: categories and "since Monday" */
+.check-card .cat-head {
+  list-style: none; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); padding: 12px 0 2px; border-top: 0 !important;
+}
+.check-card .cat-head + .task { border-top: 0; }
+.task-meta.carried { color: var(--warn); font-weight: 600; }
+.cat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cat-chips .chip.add { color: var(--accent); }

@@ -32,6 +32,10 @@ export const LEAD_TIMES = [
   { id: '1m', label: '1 month', days: 30 },
 ];
 
+// The Goals feature is switched off for now. Your goals data is kept safe in
+// storage and backups; set this back to true to bring the Goals tab back.
+export const GOALS_ON = false;
+
 export const PROJECT_STATUSES = ['Not started', 'In progress', 'Stuck', 'Done'];
 
 export function uid() {
@@ -58,13 +62,14 @@ function defaultData() {
     info: [],
     lists: [],
     grades: {},
+    dayOrder: {},
   };
 }
 
 /*
   What each kind of item looks like:
 
-  task:     { id, title, notes, date|null, time|null, sectionId, projectId, goalId,
+  task:     { id, title, notes, date|null, time|null, sectionId, projectId, goalId, atWork,
               done, doneAt, repeat: null | { days:[0-6], until, doneDates:{date:iso}, skips:[] },
               pushes:[{from,to,at}], seriesId?, createdAt }
   event:    { id, title, date, endDate|null, time|null, sectionId, lead:'1w', notes }
@@ -75,6 +80,7 @@ function defaultData() {
               targets:[{ id, label, perWeek, manual:{weekStart:n} }], createdAt }
   info:     { id, title, body, createdAt }
   list:     { id, name, checkable, items:[{id,text,note,checked}], createdAt }
+  dayOrder: { 'YYYY-MM-DD': [taskId, ...] }  the order you dragged tasks into on that day
 */
 
 let data = load();
@@ -113,6 +119,7 @@ function migrate(d) {
     info: arr(d.info),
     lists: arr(d.lists),
     grades: d.grades && typeof d.grades === 'object' ? d.grades : {},
+    dayOrder: d.dayOrder && typeof d.dayOrder === 'object' ? d.dayOrder : {},
   };
 }
 
@@ -197,6 +204,7 @@ export function addTask(fields) {
     sectionId: data.sections[0]?.id || null,
     projectId: null,
     goalId: null,
+    atWork: false,
     done: false,
     doneAt: null,
     repeat: null,
@@ -281,6 +289,7 @@ export function moveOccurrence(id, fromK, toK) {
     sectionId: t.sectionId,
     projectId: t.projectId,
     goalId: t.goalId,
+    atWork: Boolean(t.atWork),
     done: false,
     doneAt: null,
     repeat: null,
@@ -296,16 +305,38 @@ export function moveOccurrence(id, fromK, toK) {
 const byTimeThenCreated = (key) => (a, b) => {
   const da = isDoneOn(a, key), db = isDoneOn(b, key);
   if (da !== db) return da ? 1 : -1;
+  // Your own drag order for the day comes first; new tasks go to the end.
+  const order = data.dayOrder[key] || [];
+  const ia = order.indexOf(a.id), ib = order.indexOf(b.id);
+  if (ia !== -1 || ib !== -1) {
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  }
   if (a.time && b.time) return a.time.localeCompare(b.time);
   if (a.time) return -1;
   if (b.time) return 1;
   return (a.createdAt || '').localeCompare(b.createdAt || '');
 };
 
-// Tasks on a day: not done first (timed in time order, then untimed),
-// then finished tasks at the bottom.
+// Tasks on a day: not done first (in the order you dragged them into,
+// otherwise timed in time order, then untimed), then finished tasks at the bottom.
 export function tasksOn(key) {
   return data.tasks.filter((t) => occursOn(t, key)).sort(byTimeThenCreated(key));
+}
+
+// Save the order you dragged a day's tasks into. workIds are the tasks now in
+// the "At work" box; the rest are taken out of it.
+export function setDayOrder(key, ids, workIds = null) {
+  data.dayOrder[key] = ids;
+  if (workIds) {
+    const work = new Set(workIds);
+    for (const id of ids) { const t = getTask(id); if (t) t.atWork = work.has(id); }
+  }
+  // Forget orders older than 60 days so this doesn't grow forever
+  const cutoff = D.addDays(D.todayKey(), -60);
+  for (const k of Object.keys(data.dayOrder)) if (k < cutoff) delete data.dayOrder[k];
+  save();
 }
 
 // Undated tasks that aren't inside a project (project tasks live in the project).
@@ -407,7 +438,7 @@ export function forecast(today = D.todayKey()) {
   }
 
   // Goal mini goals in the next 7 days
-  for (const g of data.quarterlyGoals) {
+  for (const g of GOALS_ON ? data.quarterlyGoals : []) {
     for (const m of g.miniGoals || []) {
       if (!m.done && m.date && m.date >= today && D.daysBetween(today, m.date) <= 7) {
         items.push({ kind: 'goal', id: g.id, title: `${m.title} (${g.title})`, date: m.date,
@@ -423,6 +454,7 @@ export function forecast(today = D.todayKey()) {
 // "Set your goals" reminders.
 export function goalReminders(today = D.todayKey()) {
   const out = [];
+  if (!GOALS_ON) return out;
   const cur = D.quarterOf(today);
   const next = D.nextQuarter(cur.year, cur.q);
   const nextStart = D.quarterStart(next.year, next.q);
@@ -582,7 +614,7 @@ export function milestonesOn(key) {
       if (m.date === key) out.push({ kind: 'project', id: p.id, title: m.title, sectionId: p.sectionId, done: m.done });
     }
   }
-  for (const g of data.quarterlyGoals) {
+  for (const g of GOALS_ON ? data.quarterlyGoals : []) {
     for (const m of g.miniGoals || []) {
       if (m.date === key) out.push({ kind: 'goal', id: g.id, title: m.title, sectionId: null, done: m.done });
     }
@@ -838,7 +870,7 @@ export const GRADE_LABELS = ['', 'Rough', 'Meh', 'Okay', 'Good', 'Great'];
 // What you grade each day: your main goals for that year, plus the day overall.
 export function gradeCategories(key = D.todayKey()) {
   const year = D.fromKey(key).getFullYear();
-  const goals = yearlyFor(year).map((g) => ({ id: g.id, label: g.title, goal: true }));
+  const goals = (GOALS_ON ? yearlyFor(year) : []).map((g) => ({ id: g.id, label: g.title, goal: true }));
   const cats = goals.length ? goals : data.sections.map((s) => ({ id: s.id, label: s.name, color: s.color }));
   return [...cats, { id: 'overall', label: 'The day overall' }];
 }

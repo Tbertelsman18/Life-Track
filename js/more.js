@@ -7,7 +7,7 @@ import { openSectionSheet, openTaskSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.7 (Nov 5)';
+export const APP_VERSION = '1.8 (Nov 5)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -148,11 +148,11 @@ export function renderPlanning() {
         ${upcoming.length || reminders.length ? forecastList([...reminders, ...upcoming]) : '<p class="empty small">No events in the next 4 weeks.</p>'}
       </section>
 
-      <section class="card">
+      ${S.GOALS_ON ? `<section class="card">
         <h2 class="card-title">${D.quarterLabel(cur.year, cur.q)} goals</h2>
         ${qGoals.length ? `<ul class="plain-list">${goalRows}</ul>` : `<p class="empty small">No goals set for this quarter.</p>
           <button class="btn wide" data-action="plan-quarter" data-year="${cur.year}" data-q="${cur.q}">Set Q${cur.q} goals</button>`}
-      </section>
+      </section>` : ''}
 
       ${projects.length ? `<section class="card">
         <h2 class="card-title">Top projects</h2>
@@ -221,7 +221,7 @@ export function renderHistory() {
   }
   const rows = [...groups.values()].sort((a, b) => (a.none - b.none) || b.n - a.n);
   const rmax = Math.max(1, ...rows.map((r) => r.n));
-  const bySeg = [['section', 'Section'], ['project', 'Project'], ['goal', 'Goal']].map(([id, l]) => `
+  const bySeg = [['section', 'Section'], ['project', 'Project'], ...(S.GOALS_ON ? [['goal', 'Goal']] : [])].map(([id, l]) => `
     <button class="seg-btn ${by === id ? 'on' : ''}" data-action="history-by" data-by="${id}">${l}</button>`).join('');
 
   const total = counts.reduce((a, b) => a + b, 0);
@@ -300,7 +300,7 @@ export function renderRepeating() {
       <p class="hint">Everything that repeats, like "Film weekly video" every Tuesday. Tap a day to turn it on or off. Tap the name to change the time or anything else.</p>
       ${list.length ? list.map((t) => {
         const p = t.projectId && S.getProject(t.projectId);
-        const g = S.resolveGoal(t.goalId);
+        const g = S.GOALS_ON ? S.resolveGoal(t.goalId) : null;
         const where = [p ? `${icon('folder')} ${esc(p.title)}` : '', g ? `${icon('target')} ${esc(g.target ? g.target.label : (g.quarterly || g.yearly)?.title)}` : ''].filter(Boolean).join(' · ');
         return `<section class="card rep-card" style="--c:${sectionColor(t.sectionId)}">
           <button class="rep-head" data-action="edit" data-id="${t.id}">

@@ -70,7 +70,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   const t = id ? S.getTask(id) : null;
   const data = S.getData();
   const v = t ? { ...t } : {
-    title: '', notes: '', date, time: null, projectId: null, goalId: null,
+    title: '', notes: '', date, time: null, projectId: null, goalId: null, atWork: false,
     sectionId: data.sections[0]?.id || null, repeat: null, ...defaults,
   };
   if (!t && v.projectId && !defaults.sectionId) v.sectionId = S.getProject(v.projectId)?.sectionId ?? v.sectionId;
@@ -117,9 +117,16 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
           <span>Project</span>
           <select name="projectId">${projectOptions(v.projectId)}</select>
         </label>
-        <label class="field">
+        ${S.GOALS_ON ? `<label class="field">
           <span>Goal / step</span>
           <select name="goalId">${goalOptions(v.goalId)}</select>
+        </label>` : ''}
+      </div>
+
+      <div class="field-group">
+        <label class="field toggle-field">
+          <span class="imp-label">${icon('briefcase')} Do at work<small>Puts it in the "At work" box on that day</small></span>
+          <input type="checkbox" name="atWork" class="switch" ${v.atWork ? 'checked' : ''}>
         </label>
       </div>
 
@@ -212,7 +219,8 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       time: form.time.value || null,
       sectionId: form.sectionId.value || null,
       projectId: form.projectId.value || null,
-      goalId: form.goalId.value || null,
+      goalId: form.goalId ? (form.goalId.value || null) : (v.goalId || null),
+      atWork: form.atWork.checked,
       important: form.important.checked,
       repeat,
     };

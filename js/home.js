@@ -136,15 +136,63 @@ function renderDay() {
       ${icon('calendar')}<span><b>It's Sunday.</b> Plan next week</span>${icon('chev-right')}</button>`);
   }
   parts.push(renderDailyCheck(ui.date)); // shows on every day
-
-  parts.push(`
-    <section class="card">
-      <h2 class="card-title">${isToday ? "Today's Tasks" : 'Tasks'}</h2>
-      ${dayItems(ui.date) || `<p class="empty">Nothing planned. Tap <b>+</b> to add a task.</p>`}
-    </section>`);
+  parts.push(renderDayTasks(ui.date));
   parts.push(renderUnscheduled());
   if (ui.date <= today) parts.push(renderReview(ui.date));
   return parts.join('');
+}
+
+// The day's plan: events, then the "At work" box, then everything else.
+// Open tasks are numbered in the order you'll do them; drag the handle on
+// the right to change the order or to move a task in or out of "At work".
+// Finished tasks are tucked into a "Done" line at the bottom.
+function renderDayTasks(key) {
+  const isToday = key === D.todayKey();
+  const events = S.eventsOn(key);
+  const miles = S.milestonesOn(key);
+  const tasks = S.tasksOn(key);
+  const open = tasks.filter((t) => !S.isDoneOn(t, key));
+  const done = tasks.filter((t) => S.isDoneOn(t, key));
+  const work = open.filter((t) => t.atWork);
+  const rest = open.filter((t) => !t.atWork);
+  const weekday = D.weekday(key) >= 1 && D.weekday(key) <= 5;
+  const out = [];
+
+  if (events.length || miles.length) {
+    out.push(`<section class="card">
+      <h2 class="card-title">${icon('calendar')} Events</h2>
+      <ul class="task-list">${events.map((e) => eventRow(e, key)).join('')}${miles.map(milestoneRow).join('')}</ul>
+    </section>`);
+  }
+
+  const list = (id, items, emptyText) => `<ul class="task-list sort-list" id="${id}" data-empty="${esc(emptyText)}">${
+    items.map((t, i) => taskRow(t, key, { num: i + 1, drag: true })).join('')}</ul>`;
+
+  // The work box shows on weekdays, or any day it has something in it.
+  if (weekday || work.length) {
+    out.push(`<section class="card work-card">
+      <h2 class="card-title">${icon('briefcase')} At work ${work.length ? `<span class="count">${work.length}</span>` : ''}</h2>
+      ${list('work-sort', work, 'Drag a task here to do it at work')}
+      <button class="add-inline" data-action="add-work" data-date="${key}">+ Add a task for work</button>
+    </section>`);
+  }
+
+  out.push(`<section class="card">
+    <h2 class="card-title">${isToday ? "Today's Tasks" : 'Tasks'} ${rest.length ? `<span class="count">${rest.length}</span>` : ''}</h2>
+    ${list('day-sort', rest, open.length ? 'Nothing else today' : done.length ? 'All done. Nice work.' : 'Nothing planned. Tap + to add a task.')}
+    ${open.length > 1 ? `<p class="hint left">Drag ${icon('drag')} to change the order.</p>` : ''}
+  </section>`);
+
+  if (done.length) {
+    out.push(`<section class="card">
+      <button class="card-title toggle" data-action="toggle-done" aria-expanded="${Boolean(ui.doneOpen)}">
+        ${icon('check')} Done <span class="count all">${done.length}</span>
+        <span class="caret ${ui.doneOpen ? 'up' : ''}">${icon('chev-down')}</span>
+      </button>
+      ${ui.doneOpen ? `<ul class="task-list">${done.map((t) => taskRow(t, key)).join('')}</ul>` : ''}
+    </section>`);
+  }
+  return out.join('');
 }
 
 // Events, milestones and tasks for one day, as a list.
@@ -194,7 +242,7 @@ function milestoneRow(m) {
     </li>`;
 }
 
-export function taskRow(t, key, { showDate = false } = {}) {
+export function taskRow(t, key, { showDate = false, num = null, drag = false } = {}) {
   const done = key ? S.isDoneOn(t, key) : t.done;
   const sec = S.getSection(t.sectionId);
   const color = sec ? sec.color : 'var(--muted)';
@@ -203,17 +251,20 @@ export function taskRow(t, key, { showDate = false } = {}) {
   if (t.time) meta.push(D.formatTime(t.time));
   if (sec) meta.push(esc(sec.name));
   if (t.projectId) { const p = S.getProject(t.projectId); if (p) meta.push(`${icon('folder')} ${esc(p.title)}`); }
-  if (t.goalId) { const g = S.resolveGoal(t.goalId); if (g) meta.push(`${icon('target')} ${esc(g.target ? g.target.label : (g.quarterly || g.yearly)?.title)}`); }
+  if (t.atWork && !drag) meta.push(`${icon('briefcase')} At work`);
+  if (S.GOALS_ON && t.goalId) { const g = S.resolveGoal(t.goalId); if (g) meta.push(`${icon('target')} ${esc(g.target ? g.target.label : (g.quarterly || g.yearly)?.title)}`); }
   if (t.repeat) meta.push(`${icon('repeat')} ${repeatLabel(t.repeat.days)}`);
   if (t.pushes && t.pushes.length) meta.push(`<span class="pushed">pushed ${t.pushes.length}×</span>`);
   return `
-    <li class="task ${done ? 'done' : ''}" style="--c:${color}" data-id="${t.id}">
+    <li class="task ${done ? 'done' : ''} ${num ? 'numbered' : ''}" style="--c:${color}" data-id="${t.id}">
+      ${num ? `<span class="step-num" aria-hidden="true">${num}</span>` : ''}
       <button class="check" data-action="toggle" data-id="${t.id}" data-date="${key || ''}"
         aria-label="${done ? 'Mark not done' : 'Mark done'}">${done ? icon('check') : ''}</button>
       <button class="task-main" data-action="edit" data-id="${t.id}" data-date="${key || ''}">
         <span class="task-title">${esc(t.title)}</span>
         ${meta.length ? `<span class="task-meta">${meta.join(' · ')}</span>` : ''}
       </button>
+      ${drag ? `<span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>` : ''}
     </li>`;
 }
 
@@ -518,6 +569,24 @@ function renderUnscheduled() {
 // After the Home screen is drawn
 export function afterHome() {
   makeSortable(document.getElementById('check-sort'), (ids) => S.reorderCheckItems(ids));
+
+  // Day view: drag tasks to reorder them, or between "At work" and the rest.
+  const work = document.getElementById('work-sort');
+  const rest = document.getElementById('day-sort');
+  if (!window.Sortable || !rest) return;
+  const ids = (el) => (el ? [...el.children].map((c) => c.dataset.id).filter(Boolean) : []);
+  const key = ui.date;
+  const save = () => {
+    const w = ids(work);
+    S.setDayOrder(key, [...w, ...ids(rest)], work ? w : null);
+  };
+  for (const el of [work, rest]) {
+    if (!el) continue;
+    window.Sortable.create(el, {
+      group: 'day-tasks', handle: '.drag', animation: 150, ghostClass: 'drag-ghost',
+      onEnd: (e) => { if (e.from !== e.to || e.oldIndex !== e.newIndex) save(); },
+    });
+  }
 }
 
 // ---------------------------------------------------------------- taps
@@ -533,6 +602,8 @@ export const homeActions = {
   'select-date': (el) => { ui.date = el.dataset.date; },
   'open-day': (el) => { ui.tab = 'home'; ui.page = null; ui.date = el.dataset.date; ui.view = 'day'; },
   'toggle-unscheduled': () => { ui.unscheduledOpen = !ui.unscheduledOpen; },
+  'toggle-done': () => { ui.doneOpen = !ui.doneOpen; },
+  'add-work': (el) => { openAddSheet({ date: el.dataset.date, defaults: { atWork: true } }); return false; },
   'toggle-past-days': () => { ui.showPastDays = !ui.showPastDays; },
   'week-mode': (el) => {
     ui.weekMode = el.dataset.mode;

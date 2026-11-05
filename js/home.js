@@ -248,7 +248,7 @@ export function taskRow(t, key, { showDate = false, num = null, drag = false } =
   const color = sec ? sec.color : 'var(--muted)';
   const meta = [];
   if (showDate && t.date) meta.push(D.formatShort(t.date));
-  if (t.time) meta.push(D.formatTime(t.time));
+  if (t.time) meta.push(`<span class="time-pill">${icon('clock')}${D.formatTime(t.time)}</span>`);
   if (sec) meta.push(esc(sec.name));
   if (t.projectId) { const p = S.getProject(t.projectId); if (p) meta.push(`${icon('folder')} ${esc(p.title)}`); }
   if (t.atWork && !drag) meta.push(`${icon('briefcase')} At work`);

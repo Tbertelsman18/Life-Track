@@ -493,9 +493,30 @@ export function goalReminders(today = D.todayKey()) {
   return out.filter((r) => !snoozed(r.key) && !seen.has(r.key) && seen.add(r.key));
 }
 
-// ---------- Daily Check ----------
-export function addCheckItem(title) {
-  data.dailyCheck.items.push({ id: uid(), title: title.trim() });
+// ---------- Routines (was "Daily Check") ----------
+// Simple things you repeat each week. Each item has the weekdays it shows on
+// (0 = Sunday ... 6 = Saturday); items saved before this have no days = every day.
+export const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+export function routineDays(item) {
+  return Array.isArray(item.days) && item.days.length ? item.days : ALL_DAYS;
+}
+
+// The routine items that show on a given day, in your order.
+export function routinesOn(key) {
+  const wd = D.weekday(key);
+  return data.dailyCheck.items.filter((i) => routineDays(i).includes(wd));
+}
+
+export function addCheckItem(title, days = ALL_DAYS) {
+  data.dailyCheck.items.push({ id: uid(), title: title.trim(), days: [...days].sort() });
+  save();
+}
+
+export function updateCheckItem(id, { title, days }) {
+  const i = data.dailyCheck.items.find((x) => x.id === id);
+  if (!i) return;
+  if (title !== undefined) i.title = title.trim();
+  if (days !== undefined) i.days = [...days].sort();
   save();
 }
 

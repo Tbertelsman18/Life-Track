@@ -811,3 +811,4 @@ label.field-group textarea { box-shadow: none; }
 textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; display: block; }
 .notes-box textarea { resize: none; line-height: 1.45; min-height: 96px; }
 .task-meta .has-notes { display: inline-flex; color: var(--muted); }
+.field-actions.inset { padding: 12px 0 0; }

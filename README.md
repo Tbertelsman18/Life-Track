@@ -21,6 +21,8 @@ All six stages are built:
 - **Day page:** events are in their own box, then an **At work** box on weekdays, then **Today's Tasks**. Open tasks are numbered in the order you plan to do them. Drag the handle on the right to reorder, or move a task in or out of At work. Finished tasks go into a collapsed **Done** box.
 - **Simpler Add task:** just the name, the date (already set to the day you are on) and an optional time. Repeat, section, project, Important and notes are under **More options**. To put a task in At work, use "+ Add a task for work" or drag it in.
 
+- **Routines** (was Daily Check): simple things you repeat each week. Each one shows on the days you pick: every day, weekdays, weekends or specific days (e.g. Water change on Saturdays). Add one with **+ → Routine**; change days with **Edit routines**.
+
 ## Files
 
 | File | What it does |

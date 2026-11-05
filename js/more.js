@@ -7,7 +7,7 @@ import { openSectionSheet, openTaskSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.14 (Nov 5)';
+export const APP_VERSION = '1.15 (Nov 5)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -51,7 +51,7 @@ export function renderMore() {
         <div class="seg">${viewSeg}</div>
       </div>
       <ul class="group">
-        <li><button class="row" data-action="edit-daily-check">${icon('check')}<span class="row-label">Daily Check items</span>
+        <li><button class="row" data-action="edit-daily-check">${icon('check')}<span class="row-label">Routines</span>
           <span class="row-value">${data.dailyCheck.items.length}</span>${icon('chev-right')}</button></li>
       </ul>
 

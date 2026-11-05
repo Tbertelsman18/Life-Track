@@ -50,7 +50,7 @@ function kindSwitch(kind) {
   return `<div class="seg kind-seg">
     <button type="button" class="seg-btn ${kind === 'task' ? 'on' : ''}" data-kind="task">Task</button>
     <button type="button" class="seg-btn ${kind === 'event' ? 'on' : ''}" data-kind="event">Event</button>
-    <button type="button" class="seg-btn ${kind === 'daily' ? 'on' : ''}" data-kind="daily">Daily Check</button>
+    <button type="button" class="seg-btn ${kind === 'daily' ? 'on' : ''}" data-kind="daily">Routine</button>
   </div>`;
 }
 
@@ -385,30 +385,64 @@ function importantToggle(on) {
   </div>`;
 }
 
-// Add an item to the Daily Check (it shows every day until removed).
-export function openDailySheet({ date = D.todayKey(), defaults = {} } = {}) {
-  const items = S.getData().dailyCheck.items;
+// Add or edit a Routine item: something simple you repeat on certain days
+// each week (e.g. "Check Ava results" on weekdays, "Water change" on Saturday).
+export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} } = {}) {
+  const item = id ? S.getData().dailyCheck.items.find((i) => i.id === id) : null;
+  const days = new Set(item ? S.routineDays(item) : S.ALL_DAYS);
+  const presets = [['Every day', S.ALL_DAYS], ['Weekdays', [1, 2, 3, 4, 5]], ['Weekends', [0, 6]]];
   openSheet(`
     <form class="sheet-form" id="daily-form" autocomplete="off">
-      ${sheetTop('New', { saveLabel: 'Add' })}
-      ${kindSwitch('daily')}
-      <input class="title-input" name="title" placeholder="Something to check every day" value="${esc(defaults.title || '')}" required>
-      <p class="hint">It shows on your Daily Check <b>every day</b> until you remove it.</p>
-      ${items.length ? `<div class="field-group pad">
-        <div class="setting-label">Already on your Daily Check</div>
-        <ul class="mini-list">${items.map((i) => `<li>${icon('check')} ${esc(i.title)}</li>`).join('')}</ul>
-      </div>` : ''}
+      ${sheetTop(item ? 'Edit Routine' : 'New', { saveLabel: item ? 'Save' : 'Add' })}
+      ${item ? '' : kindSwitch('daily')}
+      <input class="title-input" name="title" placeholder="e.g. Check Ava results, Water change" value="${esc(item ? item.title : defaults.title || '')}" required>
+      <div class="field-group">
+        <div class="field col">
+          <span>Shows on <b class="days-now"></b></span>
+          <div class="day-chips">${D.WEEK_ORDER.map((d) => `
+            <button type="button" class="chip" data-day="${d}">${D.DAY_NAMES[d].slice(0, 2)}</button>`).join('')}</div>
+          <div class="field-actions inset">${presets.map(([label], i) => `
+            <button type="button" class="chip" data-preset="${i}">${label}</button>`).join('')}</div>
+        </div>
+      </div>
+      <p class="hint">It shows in <b>Routines</b> on these days every week, and you check it off each time.</p>
+      ${item ? `<button type="button" class="btn danger wide" data-act="delete">Delete from Routines</button>` : ''}
     </form>`);
   const form = $('#daily-form');
-  setTimeout(() => form.title.focus(), 50);
-  wireKindSwitch(form, 'daily', { date, defaults });
+  if (!item) setTimeout(() => form.title.focus(), 50);
+  if (!item) wireKindSwitch(form, 'daily', { date, defaults });
+
+  const paint = () => {
+    form.querySelectorAll('[data-day]').forEach((b) => {
+      const on = days.has(Number(b.dataset.day));
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on);
+    });
+    form.querySelector('.days-now').textContent = days.size ? D.daysLabel([...days]) : 'Pick at least one day';
+  };
+  form.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => {
+    const d = Number(b.dataset.day);
+    if (days.has(d)) days.delete(d); else days.add(d);
+    paint();
+  }));
+  form.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
+    days.clear();
+    presets[Number(b.dataset.preset)][1].forEach((d) => days.add(d));
+    paint();
+  }));
+  paint();
+
+  form.querySelector('[data-act="delete"]')?.addEventListener('click', () => {
+    if (confirm(`Delete "${item.title}" from your Routines?`)) { S.removeCheckItem(item.id); closeSheet(); }
+  });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const title = form.title.value.trim();
     if (!title) return;
-    S.addCheckItem(title);
+    if (!days.size) { toast('Pick at least one day'); return; }
+    if (item) S.updateCheckItem(item.id, { title, days: [...days] });
+    else { S.addCheckItem(title, [...days]); toast('Added to your Routines'); }
     closeSheet();
-    toast(`Added to your Daily Check`);
   });
 }
 

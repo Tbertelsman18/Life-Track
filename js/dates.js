@@ -154,3 +154,13 @@ export function formatMonthDay(key) {
   const d = fromKey(key);
   return `${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
 }
+
+// "Every day", "Weekdays", "Weekends" or e.g. "Mon/Wed/Sat"
+export function daysLabel(days) {
+  const set = new Set(days);
+  if (set.size === 7) return 'Every day';
+  if (set.size === 5 && [1, 2, 3, 4, 5].every((d) => set.has(d))) return 'Weekdays';
+  if (set.size === 2 && set.has(0) && set.has(6)) return 'Weekends';
+  if (set.size === 1) return 'Every ' + DAY_NAMES_LONG[[...set][0]];
+  return WEEK_ORDER.filter((d) => set.has(d)).map((d) => DAY_NAMES[d]).join('/');
+}

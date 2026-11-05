@@ -1,9 +1,9 @@
-// The Home tab: Day / Week / Month views, mini calendar, Daily Check, Forecast.
+// The Home tab: Day / Week / Month views, mini calendar, Routines.
 
 import * as D from './dates.js';
 import * as S from './store.js';
 import { ui, esc, icon, rerender, go, sectionColor, makeSortable, toast } from './ui.js';
-import { openTaskSheet, openEventSheet, openAddSheet } from './forms.js';
+import { openTaskSheet, openEventSheet, openAddSheet, openDailySheet } from './forms.js';
 
 export function renderHome() {
   const views = ['day', 'week', 'month'];
@@ -265,38 +265,35 @@ export function taskRow(t, key, { showDate = false, num = null, drag = false } =
     </li>`;
 }
 
-function repeatLabel(days) {
-  const set = new Set(days);
-  if (set.size === 7) return 'Every day';
-  if (set.size === 5 && [1, 2, 3, 4, 5].every((d) => set.has(d))) return 'Weekdays';
-  if (set.size === 2 && set.has(0) && set.has(6)) return 'Weekends';
-  return D.WEEK_ORDER.filter((d) => set.has(d)).map((d) => D.DAY_NAMES[d]).join('/');
-}
+const repeatLabel = (days) => D.daysLabel(days);
 
 // ---------------------------------------------------------------- daily check
+// Routines: simple things you repeat on set days each week. Only the items
+// for this day's weekday show; "Edit" shows them all with their days.
 function renderDailyCheck(key) {
-  const items = S.getData().dailyCheck.items;
+  const everything = S.getData().dailyCheck.items;
+  const items = S.routinesOn(key);
   const doneCount = items.filter((i) => S.isChecked(i.id, key)).length;
   const editing = ui.checkEdit;
 
   let body;
-  if (!items.length && !editing) {
-    body = `<p class="empty">Things you look at every day (e.g. Ava Notes). <button class="link inline" data-action="check-edit">Add items</button></p>`;
+  if (!everything.length && !editing) {
+    body = `<p class="empty">Simple things you repeat each week, like checking results every weekday or a water change on Saturdays. <button class="link inline" data-action="check-add-item">Add one</button></p>`;
   } else if (editing) {
     body = `
       <ul class="task-list check-edit" id="check-sort">
-        ${items.map((i) => `
+        ${everything.map((i) => `
           <li class="task" data-id="${i.id}">
             <span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>
-            <button class="task-main" data-action="check-rename" data-id="${i.id}"><span class="task-title">${esc(i.title)}</span></button>
+            <button class="task-main" data-action="check-rename" data-id="${i.id}"><span class="task-title">${esc(i.title)}</span>
+              <span class="task-meta">${icon('repeat')} ${esc(D.daysLabel(S.routineDays(i)))}</span></button>
             <button class="icon-btn sm danger" data-action="check-remove" data-id="${i.id}" aria-label="Remove">${icon('x')}</button>
           </li>`).join('')}
       </ul>
-      <form class="inline-add" data-form="check-add">
-        <input name="title" placeholder="Add a daily item" autocomplete="off">
-        <button class="link strong" type="submit">Add</button>
-      </form>
+      <button class="add-inline" data-action="check-add-item">+ Add a routine</button>
       <div class="check-foot"><button class="link small" data-action="check-edit">Done editing</button></div>`;
+  } else if (!items.length) {
+    body = `<p class="empty small">Nothing on your routine ${key === D.todayKey() ? 'today' : 'this day'}.</p>`;
   } else if (key > D.todayKey()) {
     // A future day: show the same items, ready to check off on the day.
     body = `<ul class="task-list compact">
@@ -305,7 +302,7 @@ function renderDailyCheck(key) {
           <span class="task-main static"><span class="task-title">${esc(i.title)}</span></span>
         </li>`).join('')}
     </ul>
-    <p class="hint left">Repeats every day. You can check these off on ${esc(D.formatShort(key))}.</p>`;
+    <p class="hint left">You can check these off on ${esc(D.formatShort(key))}.</p>`;
   } else {
     body = `<ul class="task-list compact">
       ${items.map((i) => {
@@ -318,24 +315,25 @@ function renderDailyCheck(key) {
     </ul>`;
   }
 
-  const open = editing || !items.length || S.getData().settings.checkOpen;
+  const open = editing || !everything.length || S.getData().settings.checkOpen;
   const all = items.length && doneCount === items.length;
   const future = key > D.todayKey();
-  const sub = !items.length ? 'Add things you check every day'
-    : future ? `${items.length} item${items.length > 1 ? 's' : ''} · repeats every day`
+  const sub = !everything.length ? 'Things you repeat each week'
+    : !items.length ? 'Nothing today'
+    : future ? `${items.length} item${items.length > 1 ? 's' : ''} on this day`
     : all ? 'All done for today' : `${doneCount} of ${items.length} done`;
   return `
     <section class="card check-card ${open ? 'open' : ''} ${all ? 'all' : ''}">
       <div class="check-bar">
         <button class="check-toggle" data-action="check-open" aria-expanded="${open}">
           <span class="check-badge">${all ? icon('check') : `${doneCount}/${items.length}`}</span>
-          <span class="check-text"><b>Daily Check</b><small>${sub}</small></span>
+          <span class="check-text"><b>Routines</b><small>${sub}</small></span>
           ${items.length ? `<span class="check-prog"><i style="width:${items.length ? Math.round((doneCount / items.length) * 100) : 0}%"></i></span>` : ''}
-          ${items.length && !editing ? `<span class="caret ${open ? 'up' : ''}">${icon('chev-down')}</span>` : ''}
+          ${everything.length && !editing ? `<span class="caret ${open ? 'up' : ''}">${icon('chev-down')}</span>` : ''}
         </button>
       </div>
       ${open ? `<div class="check-body">${body}
-        ${items.length && !editing ? `<div class="check-foot"><button class="edit-subtle" data-action="check-edit">${icon('edit')} Edit list</button></div>` : ''}
+        ${everything.length && !editing ? `<div class="check-foot"><button class="edit-subtle" data-action="check-edit">${icon('edit')} Edit routines</button></div>` : ''}
       </div>` : ''}
     </section>`;
 }
@@ -473,14 +471,14 @@ function renderToSchedule(days) {
     </section>`;
 }
 
-// A small Daily Check line for each day in Week view.
+// A small Routines line for each day in Week view.
 function weekCheckLine(k) {
-  const items = S.getData().dailyCheck.items;
+  const items = S.routinesOn(k);
   if (!items.length) return '';
   const done = items.filter((i) => S.isChecked(i.id, k)).length;
   const all = done === items.length;
   return `<button class="wcheck ${all ? 'all' : ''} ${k > D.todayKey() ? 'future' : ''}" data-action="open-day" data-date="${k}">
-    ${icon('check')}<span>Daily Check</span><b>${done}/${items.length}</b></button>`;
+    ${icon('check')}<span>Routines</span><b>${done}/${items.length}</b></button>`;
 }
 
 // ---------------------------------------------------------------- month
@@ -619,15 +617,11 @@ export const homeActions = {
   'check-edit': () => { ui.checkEdit = !ui.checkEdit; },
   'check-remove': (el) => {
     const item = S.getData().dailyCheck.items.find((i) => i.id === el.dataset.id);
-    if (item && confirm(`Remove "${item.title}" from your Daily Check?`)) S.removeCheckItem(item.id);
+    if (item && confirm(`Remove "${item.title}" from your Routines?`)) S.removeCheckItem(item.id);
     return false;
   },
-  'check-rename': (el) => {
-    const item = S.getData().dailyCheck.items.find((i) => i.id === el.dataset.id);
-    const name = item && prompt('Rename item:', item.title);
-    if (name && name.trim()) S.renameCheckItem(item.id, name);
-    return false;
-  },
+  'check-rename': (el) => { openDailySheet({ id: el.dataset.id }); return false; },
+  'check-add-item': () => { openDailySheet({ date: ui.date }); return false; },
   dismiss: (el) => { S.dismiss(el.dataset.key); toast('Hidden for 3 days'); return false; },
   'open-planning': () => { ui.tab = 'more'; go({ type: 'planning' }); return false; },
 };

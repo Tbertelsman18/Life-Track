@@ -20,10 +20,6 @@ export function renderHome() {
     const rel = isToday ? 'Today' : ui.date === D.addDays(today, 1) ? 'Tomorrow' : ui.date === D.addDays(today, -1) ? 'Yesterday' : null;
     eyebrow = rel ? `${rel} · ${D.DAY_NAMES_LONG[d.getDay()]}` : `${D.DAY_NAMES_LONG[d.getDay()]} · ${d.getFullYear()}`;
     display = `${D.MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
-  } else if (ui.view === 'week' && ui.weekMode === 'next7') {
-    eyebrow = ui.date === today ? 'Next 7 days' : `7 days from ${D.formatMonthDay(ui.date)}`;
-    const e = D.fromKey(D.addDays(ui.date, 6));
-    display = `${D.formatMonthDay(ui.date)} – ${d.getMonth() === e.getMonth() ? e.getDate() : D.formatMonthDay(D.addDays(ui.date, 6))}`;
   } else if (ui.view === 'week') {
     eyebrow = ui.weekMode === 'plan' ? (D.startOfWeek(ui.date) === nextMonday() ? 'Planning next week' : 'Planning')
       : D.startOfWeek(today) === D.startOfWeek(ui.date) ? 'This week' : String(d.getFullYear());
@@ -35,7 +31,7 @@ export function renderHome() {
 
   const body = ui.view === 'day' ? renderDay() : ui.view === 'week' ? renderWeek() : renderMonth();
   const onCurrent = ui.view === 'day' ? isToday
-    : ui.view === 'week' ? (ui.weekMode === 'plan' ? D.startOfWeek(ui.date) === nextMonday() : ui.weekMode === 'next7' ? isToday : D.startOfWeek(today) === D.startOfWeek(ui.date))
+    : ui.view === 'week' ? (ui.weekMode === 'plan' ? D.startOfWeek(ui.date) === nextMonday() : D.startOfWeek(today) === D.startOfWeek(ui.date))
     : D.sameMonth(today, ui.date);
 
   return `
@@ -415,24 +411,20 @@ export function nextMonday(k = D.todayKey()) {
 function renderWeek() {
   const today = D.todayKey();
   const mode = ui.weekMode || 'week';
-  const modes = [['week', 'This week'], ['next7', 'Next 7 days'], ['plan', 'Plan next week']].map(([id, label]) => `
+  const modes = [['week', 'This week'], ['plan', 'Plan next week']].map(([id, label]) => `
     <button class="seg-btn ${mode === id ? 'on' : ''}" data-action="week-mode" data-mode="${id}">${label}</button>`).join('');
   const switcher = `<div class="seg small week-modes">${modes}</div>`;
 
   let days, toggle = '';
-  if (mode === 'next7') {
-    days = Array.from({ length: 7 }, (_, i) => D.addDays(ui.date, i));
-  } else {
-    const all = Array.from({ length: 7 }, (_, i) => D.addDays(D.startOfWeek(ui.date), i));
-    days = all;
-    if (mode === 'week') {
-      // In the current week, days that have passed are hidden (tap "Show" to see them).
-      const pastDays = all.filter((k) => k < today);
-      const isThisWeek = all.includes(today);
-      if (isThisWeek && !ui.showPastDays) days = all.filter((k) => k >= today);
-      if (isThisWeek && pastDays.length) toggle = `<button class="past-toggle" data-action="toggle-past-days">
-        ${ui.showPastDays ? `Hide earlier days` : `Show ${pastDays.length} earlier day${pastDays.length > 1 ? 's' : ''}`}</button>`;
-    }
+  const all = Array.from({ length: 7 }, (_, i) => D.addDays(D.startOfWeek(ui.date), i));
+  days = all;
+  if (mode === 'week') {
+    // In the current week, days that have passed are hidden (tap "Show" to see them).
+    const pastDays = all.filter((k) => k < today);
+    const isThisWeek = all.includes(today);
+    if (isThisWeek && !ui.showPastDays) days = all.filter((k) => k >= today);
+    if (isThisWeek && pastDays.length) toggle = `<button class="past-toggle" data-action="toggle-past-days">
+      ${ui.showPastDays ? `Hide earlier days` : `Show ${pastDays.length} earlier day${pastDays.length > 1 ? 's' : ''}`}</button>`;
   }
   const planning = mode === 'plan';
 

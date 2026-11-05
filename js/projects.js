@@ -82,6 +82,8 @@ export function renderProjectPage(id) {
   if (!p) return pageHeader('Project not found', { backLabel: 'Projects' });
   const prog = S.projectProgress(p.id);
   const tasks = S.projectTasks(p.id);
+  const oneOff = tasks.filter((t) => !t.repeat);
+  const repeating = tasks.filter((t) => t.repeat);
   const minis = [...(p.miniGoals || [])].sort((a, b) => (a.done - b.done) || (a.date || '9999').localeCompare(b.date || '9999'));
   const statuses = S.PROJECT_STATUSES.map((s) => `
     <button class="chip ${p.status === s ? 'on' : ''} ${statusClass(s)}" data-action="project-status" data-id="${p.id}" data-status="${s}">${s}</button>`).join('');
@@ -102,13 +104,16 @@ export function renderProjectPage(id) {
           <h2 class="card-title">Tasks ${prog.total ? `<span class="count">${prog.done}/${prog.total}</span>` : ''}</h2>
         </div>
         ${prog.total ? progressBar(prog.done / prog.total, sectionColor(p.sectionId)) : ''}
-        ${tasks.length ? `<ul class="task-list">${tasks.map((t) => taskRow(t, t.date, { showDate: true })).join('')}</ul>` : ''}
+        ${oneOff.length ? `<ul class="task-list">${oneOff.map((t) => taskRow(t, t.date, { showDate: true })).join('')}</ul>` : ''}
+        ${repeating.length ? `<h3 class="sub-label">${icon('repeat')} Repeating</h3>
+          <ul class="task-list">${repeating.map(repeatRow).join('')}</ul>` : ''}
         <form class="inline-add" data-form="project-task" data-id="${p.id}">
           <input name="title" placeholder="Add a task" autocomplete="off">
           <input name="date" type="date" aria-label="Date (optional)" class="date-mini">
           <button class="link strong" type="submit">Add</button>
         </form>
-        <p class="hint left">Tasks with a date also show on your calendar.</p>
+        <button class="add-inline" data-action="project-task-full" data-id="${p.id}">${icon('repeat')} Add a repeating task or set a time…</button>
+        <p class="hint left">Tap any task to change its day, time or repeat days. Dated tasks also show on your calendar.</p>
       </section>
 
       <section class="card">
@@ -134,6 +139,19 @@ export function renderProjectPage(id) {
         <button class="btn danger wide" data-action="delete-project" data-id="${p.id}">Delete project</button>
       </div>
     </div>`;
+}
+
+// A repeating task: shows its days; tap to change them.
+export function repeatRow(t) {
+  const days = D.WEEK_ORDER.filter((d) => t.repeat.days.includes(d)).map((d) => D.DAY_NAMES[d]).join(', ');
+  return `
+    <li class="task repeat-row" style="--c:${sectionColor(t.sectionId)}">
+      <span class="rep-ic">${icon('repeat')}</span>
+      <button class="task-main" data-action="edit" data-id="${t.id}">
+        <span class="task-title">${esc(t.title)}</span>
+        <span class="task-meta">Every ${days}${t.time ? ' · ' + D.formatTime(t.time) : ''}</span>
+      </button>
+    </li>`;
 }
 
 export function miniRow(m, ownerKind, ownerId) {
@@ -193,6 +211,11 @@ export const projectActions = {
       if (p.state === 'done') S.moveProject(p.id, 'active');
       S.updateProject(p.id, { status: el.dataset.status }, { worked: true });
     }
+    return false;
+  },
+  'project-task-full': (el) => {
+    const p = S.getProject(el.dataset.id);
+    openTaskSheet({ date: D.todayKey(), defaults: { projectId: p.id, sectionId: p.sectionId } });
     return false;
   },
   'project-done': (el) => { finishProject(S.getProject(el.dataset.id)); return false; },

@@ -9,7 +9,7 @@ import { renderHome, afterHome, homeActions, homeForms } from './home.js';
 import { renderProjects, renderProjectPage, afterProjects, projectActions, projectForms } from './projects.js';
 import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, goalActions, goalForms, afterGoals } from './goals.js';
 import { renderLists, renderListPage, afterLists, listActions, listForms } from './lists.js';
-import { renderMore, renderPlanning, renderHistory, renderPushed, moreActions } from './more.js';
+import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeating, moreActions } from './more.js';
 
 const actions = {
   ...homeActions, ...projectActions, ...goalActions, ...listActions, ...moreActions,
@@ -38,6 +38,7 @@ function renderPage(p) {
     case 'planning': return renderPlanning();
     case 'history': return renderHistory();
     case 'pushed': return renderPushed();
+    case 'repeating': return renderRepeating();
     default: return '';
   }
 }

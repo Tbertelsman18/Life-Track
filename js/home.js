@@ -143,7 +143,6 @@ function renderDay() {
       ${dayItems(ui.date) || `<p class="empty">Nothing planned. Tap <b>+</b> to add a task.</p>`}
     </section>`);
   parts.push(renderUnscheduled());
-  if (isToday) parts.push(renderForecast());
   if (ui.date <= today) parts.push(renderReview(ui.date));
   return parts.join('');
 }
@@ -248,7 +247,8 @@ function renderDailyCheck(key) {
       <form class="inline-add" data-form="check-add">
         <input name="title" placeholder="Add a daily item" autocomplete="off">
         <button class="link strong" type="submit">Add</button>
-      </form>`;
+      </form>
+      <div class="check-foot"><button class="link small" data-action="check-edit">Done editing</button></div>`;
   } else if (key > D.todayKey()) {
     // A future day: show the same items, ready to check off on the day.
     body = `<ul class="task-list compact">
@@ -285,9 +285,10 @@ function renderDailyCheck(key) {
           ${items.length ? `<span class="check-prog"><i style="width:${items.length ? Math.round((doneCount / items.length) * 100) : 0}%"></i></span>` : ''}
           ${items.length && !editing ? `<span class="caret ${open ? 'up' : ''}">${icon('chev-down')}</span>` : ''}
         </button>
-        ${open && (items.length || editing) ? `<button class="link small" data-action="check-edit">${editing ? 'Done' : 'Edit'}</button>` : ''}
       </div>
-      ${open ? `<div class="check-body">${body}</div>` : ''}
+      ${open ? `<div class="check-body">${body}
+        ${items.length && !editing ? `<div class="check-foot"><button class="edit-subtle" data-action="check-edit">${icon('edit')} Edit list</button></div>` : ''}
+      </div>` : ''}
     </section>`;
 }
 
@@ -353,14 +354,6 @@ export function forecastList(items) {
   </ul>`;
 }
 
-function renderForecast() {
-  const items = S.forecast();
-  return `
-    <section class="card">
-      <h2 class="card-title">Forecast</h2>
-      ${items.length ? forecastList(items) : `<p class="empty">Nothing coming up. Add an <b>Event</b> with the + button and choose how far ahead to be told.</p>`}
-    </section>`;
-}
 
 // ---------------------------------------------------------------- week
 export function nextMonday(k = D.todayKey()) {

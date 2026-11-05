@@ -3,11 +3,11 @@
 import * as D from './dates.js';
 import * as S from './store.js';
 import { ui, esc, icon, go, pct, progressBar, sectionColor, pageHeader, toast } from './ui.js';
-import { openSectionSheet } from './forms.js';
+import { openSectionSheet, openTaskSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.6 (Nov 5)';
+export const APP_VERSION = '1.7 (Nov 5)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -35,6 +35,8 @@ export function renderMore() {
       <ul class="group">
         <li><button class="row" data-action="open-planning">${icon('calendar')}<span class="row-label">Sunday Planning</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-history">${icon('chart')}<span class="row-label">History</span>${icon('chev-right')}</button></li>
+        <li><button class="row" data-action="open-repeating">${icon('repeat')}<span class="row-label">Repeating tasks</span>
+          <span class="row-value">${S.repeatingTasks().length}</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-pushed">${icon('turtle')}<span class="row-label">Most Pushed Off</span>${icon('chev-right')}</button></li>
       </ul>
 
@@ -289,6 +291,31 @@ function pushedList(limit) {
       <b class="pushed">${g.count}×</b></li>`).join('')}</ul>`;
 }
 
+// Every repeating task in one place, with one-tap day changes.
+export function renderRepeating() {
+  const list = S.repeatingTasks();
+  return `
+    ${pageHeader('Repeating tasks', { backLabel: 'More' })}
+    <div class="view-body">
+      <p class="hint">Everything that repeats, like "Film weekly video" every Tuesday. Tap a day to turn it on or off. Tap the name to change the time or anything else.</p>
+      ${list.length ? list.map((t) => {
+        const p = t.projectId && S.getProject(t.projectId);
+        const g = S.resolveGoal(t.goalId);
+        const where = [p ? `${icon('folder')} ${esc(p.title)}` : '', g ? `${icon('target')} ${esc(g.target ? g.target.label : (g.quarterly || g.yearly)?.title)}` : ''].filter(Boolean).join(' · ');
+        return `<section class="card rep-card" style="--c:${sectionColor(t.sectionId)}">
+          <button class="rep-head" data-action="edit" data-id="${t.id}">
+            <span class="swatch" style="background:var(--c)"></span>
+            <span class="task-main-inner"><span class="task-title">${esc(t.title)}</span>
+              <span class="task-meta">${t.time ? D.formatTime(t.time) : 'Any time'}${where ? ' · ' + where : ''}</span></span>
+            ${icon('chev-right')}
+          </button>
+          <div class="sched-days">${D.WEEK_ORDER.map((d) => `<button class="chip ${t.repeat.days.includes(d) ? 'on' : ''}" data-action="repeat-day" data-id="${t.id}" data-day="${d}" aria-pressed="${t.repeat.days.includes(d)}">${D.DAY_NAMES[d].slice(0, 2)}</button>`).join('')}</div>
+        </section>`;
+      }).join('') : '<p class="empty">No repeating tasks yet. When you add a task, pick days under "Repeat on".</p>'}
+      <button class="btn wide" data-action="new-repeating">${icon('plus')} New repeating task</button>
+    </div>`;
+}
+
 export function renderPushed() {
   return `
     ${pageHeader('Most Pushed Off', { backLabel: 'More' })}
@@ -346,6 +373,9 @@ function doImport() {
 export const moreActions = {
   'open-planning': () => { ui.tab = 'more'; go({ type: 'planning' }); return false; },
   'open-history': () => { ui.tab = 'more'; go({ type: 'history' }); return false; },
+  'open-repeating': () => { ui.tab = 'more'; go({ type: 'repeating' }); return false; },
+  'repeat-day': (el) => { S.toggleRepeatDay(el.dataset.id, Number(el.dataset.day)); return false; },
+  'new-repeating': () => { openTaskSheet({ date: D.todayKey(), defaults: { repeat: { days: [D.weekday(D.todayKey())], until: null, doneDates: {}, skips: [] } } }); return false; },
   'open-pushed': () => { ui.tab = 'more'; go({ type: 'pushed', parent: ui.page }); return false; },
   'history-week': (el) => { ui.historyWeek = el.dataset.week; },
   'history-by': (el) => { ui.historyBy = el.dataset.by; },

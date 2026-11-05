@@ -192,7 +192,7 @@ function gradeStrip(goalId) {
 function quarterlyRow(g) {
   const p = S.quarterlyProgress(g);
   return `<li><button class="q-row" data-action="open-goal" data-id="${g.id}">
-    <span class="q-row-top"><span class="proj-title">${esc(g.title)}</span><span class="pnum">${p === null ? '' : pct(p)}</span>${icon('chev-right')}</span>
+    <span class="q-row-top"><span class="proj-title">${esc(g.title)}</span>${!g.q ? '<span class="status">any time</span>' : ''}<span class="pnum">${p === null ? '' : pct(p)}</span>${icon('chev-right')}</span>
     ${p !== null ? progressBar(p) : ''}
     <span class="task-meta">${goalSummary(g)}</span>
   </button></li>`;
@@ -338,7 +338,7 @@ export function renderQuarterPlan(year, q) {
     </section>` : '';
 
   const setters = yearly.length ? yearly.map((y) => {
-    const qs = S.quarterlyFor(year, q, y.id);
+    const qs = S.stepsForQuarter(year, q, y.id);
     return `
       <section class="card">
         <div class="card-head">
@@ -347,6 +347,7 @@ export function renderQuarterPlan(year, q) {
         </div>
         ${qs.length ? `<ul class="plain-list">${qs.map((g) => quarterlyRow(g)).join('')}</ul>`
           : `<p class="empty small">What will you do in Q${q} to move this forward?</p>`}
+        ${qs.some((g) => !g.q) ? `<p class="hint left">Steps marked "any time" count toward every quarter until they're done.</p>` : ''}
       </section>`;
   }).join('') : `<p class="empty">First add your yearly goals for ${year}.</p>
     <button class="btn wide" data-action="new-yearly" data-year="${year}">${icon('plus')} Add a ${year} goal</button>`;
@@ -408,6 +409,12 @@ function openQuarterlyForm(g, { yearlyId, year, q } = {}) {
         toast('Step added. Drag to reorder, tap to add tasks.');
       }
     },
+    onDelete: g ? () => {
+      if (!confirm(`Delete the step "${g.title}"? Its tasks stay on your calendar but won't be linked to it.`)) return false;
+      S.deleteQuarterly(g.id);
+      if (ui.page?.type === 'quarterly' && ui.page.id === g.id) back();
+    } : null,
+    deleteLabel: 'Delete step',
   });
 }
 

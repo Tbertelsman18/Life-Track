@@ -429,14 +429,14 @@ export function goalReminders(today = D.todayKey()) {
   const untilNext = D.daysBetween(today, nextStart);
 
   // 2 weeks before a quarter starts (and until goals are set)
-  if (untilNext <= 14 && quarterlyFor(next.year, next.q).length === 0) {
+  if (untilNext <= 14 && !hasQuarterPlan(next.year, next.q)) {
     out.push({ kind: 'reminder', action: 'plan-quarter', year: next.year, q: next.q,
       key: `q-${next.year}-${next.q}`,
       title: `Set your goals for ${D.quarterLabel(next.year, next.q)}`,
       when: D.countdown(today, nextStart), sort: today });
   }
   // A quarter has started with no goals
-  if (quarterlyFor(cur.year, cur.q).length === 0 && data.yearlyGoals.some((g) => g.year === cur.year)) {
+  if (!hasQuarterPlan(cur.year, cur.q) && data.yearlyGoals.some((g) => g.year === cur.year)) {
     out.push({ kind: 'reminder', action: 'plan-quarter', year: cur.year, q: cur.q,
       key: `q-${cur.year}-${cur.q}`,
       title: `Set your goals for ${D.quarterLabel(cur.year, cur.q)}`, when: 'Now', sort: today });
@@ -559,15 +559,16 @@ export function moveProject(id, state) {
 }
 
 export function projectTasks(id) {
-  return data.tasks.filter((t) => t.projectId === id && !t.repeat)
+  return data.tasks.filter((t) => t.projectId === id)
     .sort((a, b) => {
+      if (Boolean(a.repeat) !== Boolean(b.repeat)) return a.repeat ? 1 : -1;
       if (a.done !== b.done) return a.done ? 1 : -1;
       return (a.date || '9999').localeCompare(b.date || '9999') || (a.createdAt || '').localeCompare(b.createdAt || '');
     });
 }
 
 export function projectProgress(id) {
-  const tasks = projectTasks(id);
+  const tasks = projectTasks(id).filter((t) => !t.repeat);
   return { done: tasks.filter((t) => t.done).length, total: tasks.length };
 }
 
@@ -613,6 +614,17 @@ export function getQuarterly(id) { return data.quarterlyGoals.find((g) => g.id =
 
 export function yearlyFor(year) {
   return data.yearlyGoals.filter((g) => g.year === year);
+}
+
+// Steps that count for a quarter: ones set to that quarter, plus unfinished
+// steps with no specific quarter ("any time") from the same year.
+export function stepsForQuarter(year, q, yearlyId) {
+  return data.quarterlyGoals.filter((g) => g.year === year && (!yearlyId || g.yearlyId === yearlyId)
+    && (g.q === q || (!g.q && !g.done))).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+export function hasQuarterPlan(year, q) {
+  return stepsForQuarter(year, q).length > 0;
 }
 
 export function quarterlyFor(year, q, yearlyId) {
@@ -860,6 +872,21 @@ export function gradeAverage(catId, n = 7, today = D.todayKey()) {
 // Completed tasks on a day that count toward a main goal (for the review card).
 export function goalDoneOn(yearlyId, key) {
   return goalCompletions(yearlyId).filter((c) => c.date === key).length;
+}
+
+// ---------- Repeating tasks ----------
+export function repeatingTasks() {
+  return data.tasks.filter((t) => t.repeat && (!t.repeat.until || t.repeat.until >= D.todayKey()))
+    .sort((a, b) => (a.time || '99').localeCompare(b.time || '99') || a.title.localeCompare(b.title));
+}
+
+export function toggleRepeatDay(id, day) {
+  const t = getTask(id);
+  if (!t || !t.repeat) return;
+  const set = new Set(t.repeat.days);
+  if (set.has(day)) { if (set.size > 1) set.delete(day); } else set.add(day);
+  t.repeat.days = [...set].sort();
+  save();
 }
 
 // ---------- Info ----------

@@ -19,7 +19,7 @@ All six stages are built:
 
 - **Goals is switched off for now.** The Goals tab, goal pickers and goal cards are hidden, and your goal data is kept. To bring it back, set `GOALS_ON = true` in `js/store.js` and put the Goals tab button back in `index.html`.
 - **Day page:** events are in their own box, then an **At work** box on weekdays, then **Today's Tasks**. Open tasks are numbered in the order you plan to do them. Drag the handle on the right to reorder, or move a task in or out of At work. Finished tasks go into a collapsed **Done** box.
-- **Do at work:** a switch on every task that puts it in the At work box.
+- **Simpler Add task:** just the name, an optional time and "Do at work". The task goes on the day you are looking at. Date, repeat, section, project, Important and notes are under **More options**.
 
 ## Files
 

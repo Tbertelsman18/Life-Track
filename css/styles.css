@@ -784,3 +784,15 @@ label.field-group textarea { box-shadow: none; }
 .sort-list:empty::before { content: attr(data-empty); color: var(--muted); font-size: 14px; padding: 0 12px; text-align: center; }
 .work-card .card-title .ic { color: var(--accent); }
 .hint .ic { width: 13px; height: 13px; vertical-align: -2px; }
+
+/* ---------------------------------------------------------------- simple task form */
+.for-day { margin: -6px 4px 0; font-size: 13px; color: var(--muted); }
+.field small.opt { color: var(--muted); font-size: 13px; margin-left: 4px; }
+.more-toggle {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 4px;
+  color: var(--accent); font-weight: 600; font-size: 15px; text-align: left;
+}
+.more-toggle small { color: var(--muted); font-weight: 400; font-size: 13px; flex: 1; }
+.more-toggle .ic { width: 16px; height: 16px; transition: transform 0.2s; }
+.more-toggle.open .ic { transform: rotate(180deg); }
+.more-opts { display: flex; flex-direction: column; gap: 14px; }

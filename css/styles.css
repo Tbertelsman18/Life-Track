@@ -806,3 +806,8 @@ label.field-group textarea { box-shadow: none; }
 }
 .task-meta .time-pill .ic { width: 12px; height: 12px; stroke-width: 2.4; }
 .task.done .time-pill { background: var(--fill); color: var(--muted); }
+
+/* Task name and notes grow to fit */
+textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; display: block; }
+.notes-box textarea { resize: none; line-height: 1.45; min-height: 96px; }
+.task-meta .has-notes { display: inline-flex; color: var(--muted); }

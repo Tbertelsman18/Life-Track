@@ -81,6 +81,13 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
     <button type="button" class="chip ${repeatDays.has(d) ? 'on' : ''}" data-day="${d}" aria-pressed="${repeatDays.has(d)}">
       ${D.DAY_NAMES[d].slice(0, 2)}</button>`).join('');
 
+  // Notes sit right under the task name when you open a task (or when it has
+  // notes). For a brand-new task they wait under "More options".
+  const notesUp = Boolean(t || v.notes);
+  const notesBox = `<label class="field-group notes-box">
+        <textarea name="notes" class="grow" rows="${notesUp ? 4 : 3}" placeholder="Notes">${esc(v.notes)}</textarea>
+      </label>`;
+
   const pushInfo = t && t.pushes && t.pushes.length
     ? `<p class="hint">Pushed off ${t.pushes.length} time${t.pushes.length > 1 ? 's' : ''}.</p>` : '';
 
@@ -89,7 +96,8 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       ${sheetTop(t ? 'Edit Task' : 'New')}
       ${allowSwitch && !t ? kindSwitch('task') : ''}
 
-      <input class="title-input" name="title" placeholder="What do you need to do?" value="${esc(v.title)}" required>
+      <textarea class="title-input grow" name="title" rows="1" enterkeyhint="done" placeholder="What do you need to do?" required>${esc(v.title)}</textarea>
+      ${notesUp ? notesBox : ''}
 
       <div class="field-group">
         <label class="field">
@@ -104,7 +112,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       </div>
 
       <button type="button" class="more-toggle" data-act="more" aria-expanded="false">
-        More options <small>repeat, section, project, notes</small> ${icon('chev-down')}
+        More options <small>repeat, section, project${notesUp ? '' : ', notes'}</small> ${icon('chev-down')}
       </button>
 
       <div class="more-opts" hidden>
@@ -139,9 +147,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
 
       ${importantToggle(v.important)}
 
-      <label class="field-group">
-        <textarea name="notes" rows="3" placeholder="Notes">${esc(v.notes)}</textarea>
-      </label>
+      ${notesUp ? '' : notesBox}
       </div>
 
       ${occurrence ? `
@@ -166,10 +172,22 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   if (allowSwitch && !t) wireKindSwitch(form, 'task', { date, defaults });
   wireSectionSelect(form.sectionId, v.sectionId);
 
+  // Long names and notes grow to fit instead of scrolling inside a tiny box.
+  const fit = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
+  form.querySelectorAll('textarea.grow').forEach((ta) => {
+    ta.addEventListener('input', () => fit(ta));
+    requestAnimationFrame(() => fit(ta));
+  });
+  // Return in the task name saves, like before (no line breaks in names).
+  form.title.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); }
+  });
+
   const more = form.querySelector('[data-act="more"]');
   more.addEventListener('click', () => {
     const box = form.querySelector('.more-opts');
     box.hidden = !box.hidden;
+    box.querySelectorAll('textarea.grow').forEach(fit);
     more.setAttribute('aria-expanded', String(!box.hidden));
     more.classList.toggle('open', !box.hidden);
   });

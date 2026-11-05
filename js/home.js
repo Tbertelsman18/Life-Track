@@ -251,6 +251,7 @@ export function taskRow(t, key, { showDate = false, num = null, drag = false } =
   if (t.time) meta.push(`<span class="time-pill">${icon('clock')}${D.formatTime(t.time)}</span>`);
   if (sec) meta.push(esc(sec.name));
   if (t.projectId) { const p = S.getProject(t.projectId); if (p) meta.push(`${icon('folder')} ${esc(p.title)}`); }
+  if (t.notes && t.notes.trim()) meta.push(`<span class="has-notes" aria-label="Has notes">${icon('note')}</span>`);
   if (t.atWork && !drag) meta.push(`${icon('briefcase')} At work`);
   if (S.GOALS_ON && t.goalId) { const g = S.resolveGoal(t.goalId); if (g) meta.push(`${icon('target')} ${esc(g.target ? g.target.label : (g.quarterly || g.yearly)?.title)}`); }
   if (t.repeat) meta.push(`${icon('repeat')} ${repeatLabel(t.repeat.days)}`);

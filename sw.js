@@ -1,7 +1,7 @@
 // Service worker: lets the app open with no internet connection.
 // When online it always loads the newest version; when offline it uses
 // the copy saved on the phone. Change VERSION after big updates.
-const VERSION = 'life-tracker-v11';
+const VERSION = 'life-tracker-v12';
 const FILES = [
   './',
   'index.html',
@@ -37,8 +37,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Always ask the server for the newest file (not the phone's web cache).
+  const req = event.request.mode === 'navigate' ? event.request : new Request(event.request, { cache: 'no-cache' });
   event.respondWith(
-    fetch(event.request)
+    fetch(req)
       .then((res) => {
         if (res.ok && new URL(event.request.url).origin === location.origin) {
           const copy = res.clone();

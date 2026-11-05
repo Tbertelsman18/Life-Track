@@ -142,7 +142,19 @@ render();
 // Ask the device to keep our data (not clear it when storage runs low).
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
-// Offline support
+// Offline support, plus updates: every time the app comes back on screen it
+// checks for a newer version, and if there is one it reloads to show it.
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+    .then((reg) => {
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+    })
+    .catch(() => {}));
+  const hadVersion = Boolean(navigator.serviceWorker.controller);
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadVersion || reloading) return;
+    reloading = true;
+    location.reload();
+  });
 }

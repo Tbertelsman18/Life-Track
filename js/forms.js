@@ -66,16 +66,6 @@ function wireKindSwitch(form, current, ctx) {
   }));
 }
 
-// The small line under the title that says which day a task is for.
-function forDay(date, projectId) {
-  if (!date) return projectId ? 'In the project, no date' : 'No date (Unscheduled)';
-  const t = D.todayKey();
-  if (date === t) return 'For today';
-  if (date === D.addDays(t, 1)) return 'For tomorrow';
-  if (date === D.addDays(t, -1)) return 'For yesterday';
-  return 'For ' + D.formatShort(date);
-}
-
 export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwitch = false } = {}) {
   const t = id ? S.getTask(id) : null;
   const data = S.getData();
@@ -100,35 +90,25 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       ${allowSwitch && !t ? kindSwitch('task') : ''}
 
       <input class="title-input" name="title" placeholder="What do you need to do?" value="${esc(v.title)}" required>
-      <p class="for-day">${esc(forDay(v.date, v.projectId))}</p>
 
-      <div class="field-group">
-        <label class="field">
-          <span>Time <small class="opt">optional</small></span>
-          <input type="time" name="time" value="${v.time || ''}">
-        </label>
-        <label class="field toggle-field">
-          <span class="imp-label">${icon('briefcase')} Do at work</span>
-          <input type="checkbox" name="atWork" class="switch" ${v.atWork ? 'checked' : ''}>
-        </label>
-      </div>
-
-      <button type="button" class="more-toggle" data-act="more" aria-expanded="false">
-        More options <small>date, repeat, section, project, notes</small> ${icon('chev-down')}
-      </button>
-
-      <div class="more-opts" hidden>
       <div class="field-group">
         <label class="field">
           <span class="date-label">${repeatDays.size ? 'Starts' : 'Date'}</span>
           <input type="date" name="date" value="${v.date || ''}">
         </label>
-        <div class="field-actions">
-          <button type="button" class="chip" data-set-date="${D.todayKey()}">Today</button>
-          <button type="button" class="chip" data-set-date="${D.addDays(D.todayKey(), 1)}">Tomorrow</button>
-          <button type="button" class="chip" data-set-date="">No date</button>
-        </div>
         <div class="block-warn" hidden></div>
+        <label class="field">
+          <span>Time <small class="opt">optional</small></span>
+          <input type="time" name="time" value="${v.time || ''}">
+        </label>
+      </div>
+
+      <button type="button" class="more-toggle" data-act="more" aria-expanded="false">
+        More options <small>repeat, section, project, notes</small> ${icon('chev-down')}
+      </button>
+
+      <div class="more-opts" hidden>
+      <div class="field-group">
         <label class="field">
           <span>Section</span>
           <select name="sectionId">${sectionOptions(v.sectionId)}</select>
@@ -193,10 +173,6 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
     more.setAttribute('aria-expanded', String(!box.hidden));
     more.classList.toggle('open', !box.hidden);
   });
-  const dayLine = form.querySelector('.for-day');
-  const syncDay = () => { dayLine.textContent = forDay(form.date.value || null, form.projectId.value || null); };
-  form.date.addEventListener('change', syncDay);
-  form.projectId.addEventListener('change', syncDay);
 
   const warn = form.querySelector('.block-warn');
   const updateWarn = () => {
@@ -207,11 +183,6 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   form.date.addEventListener('change', updateWarn);
   updateWarn();
 
-  form.querySelectorAll('[data-set-date]').forEach((b) => b.addEventListener('click', () => {
-    form.date.value = b.dataset.setDate;
-    updateWarn();
-    syncDay();
-  }));
 
   form.querySelectorAll('.day-chips .chip').forEach((b) => b.addEventListener('click', () => {
     const d = Number(b.dataset.day);
@@ -250,7 +221,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       sectionId: form.sectionId.value || null,
       projectId: form.projectId.value || null,
       goalId: form.goalId ? (form.goalId.value || null) : (v.goalId || null),
-      atWork: form.atWork.checked,
+      atWork: Boolean(v.atWork),
       important: form.important.checked,
       repeat,
     };

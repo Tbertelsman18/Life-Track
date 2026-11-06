@@ -306,7 +306,7 @@ function renderDailyCheck(key) {
           <li class="task" data-id="${i.id}">
             <span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>
             <button class="task-main" data-action="check-rename" data-id="${i.id}"><span class="task-title">${esc(i.title)}</span>
-              <span class="task-meta">${icon('repeat')} ${esc(D.daysLabel(S.routineDays(i)))}${S.isWeeklyRoutine(i) ? ' · until done' : ''}${i.category ? ` · ${esc(i.category)}` : ''}</span></button>
+              <span class="task-meta">${icon('repeat')} ${esc(S.routineLabel(i))}${S.isWeeklyRoutine(i) ? ' · until done' : ''}${i.category ? ` · ${esc(i.category)}` : ''}</span></button>
             <button class="icon-btn sm danger" data-action="check-remove" data-id="${i.id}" aria-label="Remove">${icon('x')}</button>
           </li>`).join('')}
       </ul>

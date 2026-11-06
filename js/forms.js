@@ -394,6 +394,15 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
   let category = item ? (item.category || '') : (defaults.category || '');
   const cats = () => [...new Set([...S.routineCategories(), category].filter(Boolean))];
   const presets = [['Every day', S.ALL_DAYS], ['Weekdays', [1, 2, 3, 4, 5]], ['Weekends', [0, 6]]];
+  // Every week, or every other week starting this week or next week
+  const thisMon = D.startOfWeek(D.todayKey());
+  const nextMon = D.addDays(thisMon, 7);
+  let every = item && S.isEveryOtherWeek(item) ? 2 : 1;
+  let startWeek = 'this';
+  if (every === 2) {
+    const weeks = Math.round(D.daysBetween(item.start, thisMon) / 7);
+    startWeek = ((weeks % 2) + 2) % 2 === 0 ? 'this' : 'next';
+  }
   openSheet(`
     <form class="sheet-form" id="daily-form" autocomplete="off">
       ${sheetTop(item ? 'Edit Routine' : 'New', { saveLabel: item ? 'Save' : 'Add' })}
@@ -406,6 +415,19 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
             <button type="button" class="chip" data-day="${d}">${D.DAY_NAMES[d].slice(0, 2)}</button>`).join('')}</div>
           <div class="field-actions inset">${presets.map(([label], i) => `
             <button type="button" class="chip" data-preset="${i}">${label}</button>`).join('')}</div>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field col">
+          <span>Repeats</span>
+          <div class="seg small rep-seg">
+            <button type="button" class="seg-btn" data-every="1">Every week</button>
+            <button type="button" class="seg-btn" data-every="2">Every other week</button>
+          </div>
+          <div class="seg small start-seg">
+            <button type="button" class="seg-btn" data-start="this">Starting this week</button>
+            <button type="button" class="seg-btn" data-start="next">Starting next week</button>
+          </div>
         </div>
       </div>
       <div class="field-group">
@@ -427,12 +449,23 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', on);
     });
-    form.querySelector('.days-now').textContent = days.size ? D.daysLabel([...days]) : '(tap the days)';
-    form.querySelector('.days-hint').innerHTML = days.size === 1
-      ? 'Shows up every week on that day and <b>stays on your list until you check it off</b>.'
-      : days.size ? 'Shows up on these days every week, all year. Check it off each time.'
-      : 'Tap the days it should show up on. It repeats every week, all year.';
+    form.querySelector('.days-now').textContent = days.size ? S.everyLabel([...days], every) : '(tap the days)';
+    form.querySelectorAll('[data-every]').forEach((b) => b.classList.toggle('on', Number(b.dataset.every) === every));
+    form.querySelectorAll('[data-start]').forEach((b) => b.classList.toggle('on', b.dataset.start === startWeek));
+    form.querySelector('.start-seg').hidden = every !== 2;
+    const often = every === 2 ? 'every other week' : 'every week';
+    let hint = days.size === 1
+      ? `Shows up ${often} on that day and <b>stays on your list until you check it off</b>.`
+      : days.size ? `Shows up on these days ${often}, all year. Check it off each time.`
+      : `Tap the days it should show up on. It repeats ${often}, all year.`;
+    if (days.size) {
+      const next = S.routineNext({ days: [...days], every, start: startWeek === 'next' ? nextMon : thisMon });
+      if (next) hint += ` Next: <b>${esc(next === D.todayKey() ? 'today' : D.formatShort(next))}</b>.`;
+    }
+    form.querySelector('.days-hint').innerHTML = hint;
   };
+  form.querySelectorAll('[data-every]').forEach((b) => b.addEventListener('click', () => { every = Number(b.dataset.every); paint(); }));
+  form.querySelectorAll('[data-start]').forEach((b) => b.addEventListener('click', () => { startWeek = b.dataset.start; paint(); }));
   const paintCats = () => {
     const box = form.querySelector('.cat-chips');
     box.innerHTML = [['', 'None'], ...cats().map((c) => [c, c])].map(([v, label]) => `
@@ -465,8 +498,9 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
     const title = form.title.value.trim();
     if (!title) return;
     if (!days.size) { toast('Pick at least one day'); return; }
-    if (item) S.updateCheckItem(item.id, { title, days: [...days], category });
-    else { S.addCheckItem(title, [...days], category); toast('Added to your Routines'); }
+    const start = every === 2 ? (startWeek === 'next' ? nextMon : thisMon) : null;
+    if (item) S.updateCheckItem(item.id, { title, days: [...days], category, every, start });
+    else { S.addCheckItem(title, [...days], category, every, start); toast('Added to your Routines'); }
     closeSheet();
   });
 }

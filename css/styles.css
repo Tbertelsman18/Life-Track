@@ -829,3 +829,5 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .reflect-q > span { font-weight: 600; font-size: 15px; }
 .reflect-q > small { color: var(--muted); font-size: 13px; margin-top: -2px; }
 .reflect-q textarea { resize: none; overflow: hidden; background: var(--fill); }
+.group-label.first { margin-top: 4px; }
+.rep-seg, .start-seg { margin-top: 12px; }

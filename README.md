@@ -21,9 +21,10 @@ All six stages are built:
 - **Day page:** events are in their own box, then an **At work** box on weekdays, then **Today's Tasks**. Open tasks are numbered in the order you plan to do them. Drag the handle on the right to reorder, or move a task in or out of At work. Finished tasks go into a collapsed **Done** box.
 - **Simpler Add task:** just the name, the date (already set to the day you are on) and an optional time. Repeat, section, project, Important and notes are under **More options**. To put a task in At work, use "+ Add a task for work" or drag it in.
 
-- **Routines** (was Daily Check): simple things you repeat each week, all year. Pick the days each one shows on and, optionally, a category (e.g. Work, Maintenance) to group them. A routine on one day a week (e.g. fish tank on Monday) stays on your list from that day until you check it off. Add one with **+ → Routine**; change it with **Edit routines**.
+- **Routines** (was Daily Check): simple things you repeat each week, all year. Pick the days each one shows on and, optionally, a category (e.g. Work, Maintenance) to group them. Routines can repeat every week or every other week. A routine on one day (e.g. fish tank on Monday) stays on your list from that day until you check it off. Add one with **+ → Routine**; change it with **Edit routines**.
 - **Daily reflection** (replaces the End-of-day review): four short questions at the end of the day. Answers save as you type.
-- **Backup:** **More → Back up to Files**. Every Sunday the Home screen shows a reminder banner until you back up that day.
+- **Info** (More → Info): things to keep handy, like codes and phone numbers.
+- **Backup:** **More → Back up to Files** (top of More). Every Sunday the Home screen shows a reminder banner until you back up that day.
 
 ## Files
 

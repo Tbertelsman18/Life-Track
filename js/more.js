@@ -7,7 +7,7 @@ import { openSectionSheet, openTaskSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.17 (Nov 6)';
+export const APP_VERSION = '1.18 (Nov 6)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -32,11 +32,23 @@ export function renderMore() {
   return `
     <header class="page-header"><h1>More</h1></header>
     <div class="view-body">
+      <h3 class="group-label first">Backup</h3>
+      <ul class="group">
+        <li><button class="row" data-action="export">${icon('share')}<span class="row-label">Back up to Files</span>
+          <span class="row-value ${lbDays === null || lbDays > 7 ? 'warn' : ''}">${backupNote}</span></button></li>
+        <li><button class="row" data-action="import">${icon('download')}<span class="row-label">Import backup</span></button></li>
+      </ul>
+      <p class="hint">Saves a backup file. Choose <b>Save to Files</b> and pick iCloud Drive to keep it safe.
+      Import replaces everything in the app with the backup you choose.</p>
+
+      <h3 class="group-label">Plan &amp; review</h3>
       <ul class="group">
         <li><button class="row" data-action="open-planning">${icon('calendar')}<span class="row-label">Sunday Planning</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-history">${icon('chart')}<span class="row-label">History</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-repeating">${icon('repeat')}<span class="row-label">Repeating tasks</span>
           <span class="row-value">${S.repeatingTasks().length}</span>${icon('chev-right')}</button></li>
+        <li><button class="row" data-action="open-info">${icon('info')}<span class="row-label">Info</span>
+          <span class="row-value">${data.info.length}</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-pushed">${icon('turtle')}<span class="row-label">Most Pushed Off</span>${icon('chev-right')}</button></li>
       </ul>
 
@@ -54,15 +66,6 @@ export function renderMore() {
         <li><button class="row" data-action="edit-daily-check">${icon('check')}<span class="row-label">Routines</span>
           <span class="row-value">${data.dailyCheck.items.length}</span>${icon('chev-right')}</button></li>
       </ul>
-
-      <h3 class="group-label">Backup</h3>
-      <ul class="group">
-        <li><button class="row" data-action="export">${icon('share')}<span class="row-label">Back up to Files</span>
-          <span class="row-value ${lbDays === null || lbDays > 7 ? 'warn' : ''}">${backupNote}</span></button></li>
-        <li><button class="row" data-action="import">${icon('download')}<span class="row-label">Import backup</span></button></li>
-      </ul>
-      <p class="hint">Export saves a backup file. Choose <b>Save to Files</b> and pick iCloud Drive to keep it safe.
-      Import replaces everything in the app with the backup you choose.</p>
 
       <p class="hint center">Life Tracker · version ${APP_VERSION}<br>${data.tasks.length} tasks · ${data.events.length} events · ${data.projects.length} projects</p>
     </div>`;
@@ -371,6 +374,7 @@ function doImport() {
 
 export const moreActions = {
   'open-planning': () => { ui.tab = 'more'; go({ type: 'planning' }); return false; },
+  'open-info': () => { ui.tab = 'more'; go({ type: 'info' }); return false; },
   'open-history': () => { ui.tab = 'more'; go({ type: 'history' }); return false; },
   'open-repeating': () => { ui.tab = 'more'; go({ type: 'repeating' }); return false; },
   'repeat-day': (el) => { S.toggleRepeatDay(el.dataset.id, Number(el.dataset.day)); return false; },

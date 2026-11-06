@@ -509,13 +509,48 @@ export function isWeeklyRoutine(item) {
   return routineDays(item).length === 1;
 }
 
+// Every other week: item.every = 2 and item.start = the Monday of a week it's on.
+export function isEveryOtherWeek(item) {
+  return item.every === 2 && Boolean(item.start);
+}
+
+function onWeek(item, key) {
+  if (!isEveryOtherWeek(item)) return true;
+  const weeks = Math.round(D.daysBetween(item.start, D.startOfWeek(key)) / 7);
+  return ((weeks % 2) + 2) % 2 === 0;
+}
+
+// Is this routine due on this exact day?
+export function routineScheduledOn(item, key) {
+  if (item.since && key < item.since) return false;
+  return routineDays(item).includes(D.weekday(key)) && onWeek(item, key);
+}
+
+// "Every day", "Mon", "Mon · every other week"...
+export function routineLabel(item) {
+  return everyLabel(routineDays(item), isEveryOtherWeek(item) ? 2 : 1);
+}
+export function everyLabel(days, every) {
+  if (every !== 2) return D.daysLabel(days);
+  if (days.length === 1) return 'Every other ' + D.DAY_NAMES_LONG[days[0]];
+  return D.daysLabel(days) + ' · every other week';
+}
+
+// The next day (from `from`, within 3 weeks) this routine is due.
+export function routineNext(item, from = D.todayKey()) {
+  for (let n = 0; n < 21; n++) {
+    const k = D.addDays(from, n);
+    if (routineScheduledOn(item, k)) return k;
+  }
+  return null;
+}
+
 // The day this routine was last due, on or before `key` (null if not yet due).
 export function routineDueSince(item, key) {
-  const days = routineDays(item);
-  for (let n = 0; n < 7; n++) {
+  for (let n = 0; n < 14; n++) {
     const k = D.addDays(key, -n);
     if (item.since && k < item.since) return null;
-    if (days.includes(D.weekday(k))) return k;
+    if (routineScheduledOn(item, k)) return k;
   }
   return null;
 }
@@ -531,8 +566,7 @@ export function routineCarried(item, key) {
 
 // The routine items that show on a given day, in your order.
 export function routinesOn(key) {
-  const wd = D.weekday(key);
-  return data.dailyCheck.items.filter((i) => routineDays(i).includes(wd) || routineCarried(i, key));
+  return data.dailyCheck.items.filter((i) => routineScheduledOn(i, key) || routineCarried(i, key));
 }
 
 // Routine categories in the order they first appear (e.g. Work, Maintenance).
@@ -540,18 +574,19 @@ export function routineCategories() {
   return [...new Set(data.dailyCheck.items.map((i) => (i.category || '').trim()).filter(Boolean))];
 }
 
-export function addCheckItem(title, days = ALL_DAYS, category = '') {
+export function addCheckItem(title, days = ALL_DAYS, category = '', every = 1, start = null) {
   data.dailyCheck.items.push({ id: uid(), title: title.trim(), days: [...days].sort(),
-    category: (category || '').trim(), since: D.todayKey() });
+    category: (category || '').trim(), since: D.todayKey(), every, start });
   save();
 }
 
-export function updateCheckItem(id, { title, days, category }) {
+export function updateCheckItem(id, { title, days, category, every, start }) {
   const i = data.dailyCheck.items.find((x) => x.id === id);
   if (!i) return;
   if (title !== undefined) i.title = title.trim();
   if (days !== undefined) i.days = [...days].sort();
   if (category !== undefined) i.category = (category || '').trim();
+  if (every !== undefined) { i.every = every; i.start = start; }
   save();
 }
 

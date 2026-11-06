@@ -8,7 +8,7 @@ import { openAddSheet } from './forms.js';
 import { renderHome, afterHome, homeActions, homeForms } from './home.js';
 import { renderProjects, renderProjectPage, afterProjects, projectActions, projectForms } from './projects.js';
 import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, goalActions, goalForms, afterGoals } from './goals.js';
-import { renderLists, renderListPage, afterLists, listActions, listForms } from './lists.js';
+import { renderLists, renderListPage, renderInfoPage, afterLists, listActions, listForms } from './lists.js';
 import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeating, moreActions } from './more.js';
 
 const actions = {
@@ -35,6 +35,7 @@ function renderPage(p) {
     case 'quarterly': return renderQuarterlyPage(p.id);
     case 'quarter-plan': return renderQuarterPlan(p.year, p.q);
     case 'list': return renderListPage(p.id);
+    case 'info': return renderInfoPage();
     case 'planning': return renderPlanning();
     case 'history': return renderHistory();
     case 'pushed': return renderPushed();

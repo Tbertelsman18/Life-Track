@@ -822,3 +822,10 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .task-meta.carried { color: var(--warn); font-weight: 600; }
 .cat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .cat-chips .chip.add { color: var(--accent); }
+
+/* Daily reflection */
+.reflect { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.reflect-q { display: flex; flex-direction: column; gap: 6px; }
+.reflect-q > span { font-weight: 600; font-size: 15px; }
+.reflect-q > small { color: var(--muted); font-size: 13px; margin-top: -2px; }
+.reflect-q textarea { resize: none; overflow: hidden; background: var(--fill); }

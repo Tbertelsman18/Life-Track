@@ -108,10 +108,13 @@ document.addEventListener('input', (e) => {
   clearTimeout(notesTimer);
   notesTimer = setTimeout(() => S.saveQuietly(), 400);
 });
-// End-of-day review note saves as you type
+// Daily reflection answers save as you type, and the boxes grow to fit
 document.addEventListener('input', (e) => {
-  const ta = e.target.closest('[data-gnote]');
-  if (ta) S.setGradeNote(ta.dataset.gnote, ta.value);
+  const ta = e.target.closest('[data-reflect]');
+  if (!ta) return;
+  S.setReflection(ta.dataset.reflect, ta.dataset.field, ta.value);
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 2 + 'px';
 });
 
 document.addEventListener('change', (e) => {

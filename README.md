@@ -22,6 +22,8 @@ All six stages are built:
 - **Simpler Add task:** just the name, the date (already set to the day you are on) and an optional time. Repeat, section, project, Important and notes are under **More options**. To put a task in At work, use "+ Add a task for work" or drag it in.
 
 - **Routines** (was Daily Check): simple things you repeat each week, all year. Pick the days each one shows on and, optionally, a category (e.g. Work, Maintenance) to group them. A routine on one day a week (e.g. fish tank on Monday) stays on your list from that day until you check it off. Add one with **+ → Routine**; change it with **Edit routines**.
+- **Daily reflection** (replaces the End-of-day review): four short questions at the end of the day. Answers save as you type.
+- **Backup:** **More → Back up to Files**. Every Sunday the Home screen shows a reminder banner until you back up that day.
 
 ## Files
 

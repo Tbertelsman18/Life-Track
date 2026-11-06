@@ -7,7 +7,7 @@ import { openSectionSheet, openTaskSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.16 (Nov 5)';
+export const APP_VERSION = '1.17 (Nov 6)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -57,7 +57,7 @@ export function renderMore() {
 
       <h3 class="group-label">Backup</h3>
       <ul class="group">
-        <li><button class="row" data-action="export">${icon('share')}<span class="row-label">Export backup</span>
+        <li><button class="row" data-action="export">${icon('share')}<span class="row-label">Back up to Files</span>
           <span class="row-value ${lbDays === null || lbDays > 7 ? 'warn' : ''}">${backupNote}</span></button></li>
         <li><button class="row" data-action="import">${icon('download')}<span class="row-label">Import backup</span></button></li>
       </ul>
@@ -266,8 +266,7 @@ function gradeSummary() {
   const cats = S.gradeCategories(today);
   const days = Array.from({ length: 14 }, (_, i) => D.addDays(today, i - 13));
   const any = days.some((k) => Object.keys(S.getGrade(k).scores).length);
-  if (!any) return `<section class="card"><h2 class="card-title">Self-grades</h2>
-    <p class="empty small">Grade your day in the End-of-day review on Home and your trends show here.</p></section>`;
+  if (!any) return '';
   return `<section class="card">
     <h2 class="card-title">Self-grades · last 14 days</h2>
     <ul class="grade-sum">${cats.map((c) => {
@@ -326,7 +325,7 @@ export function renderPushed() {
 }
 
 // ---------------------------------------------------------------- backup
-async function doExport() {
+export async function doExport() {
   const json = S.exportJSON();
   const name = S.backupFileName();
   const file = new File([json], name, { type: 'application/json' });

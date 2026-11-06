@@ -4,6 +4,7 @@ import * as D from './dates.js';
 import * as S from './store.js';
 import { ui, esc, icon, rerender, go, sectionColor, makeSortable, toast } from './ui.js';
 import { openTaskSheet, openEventSheet, openAddSheet, openDailySheet } from './forms.js';
+import { doExport } from './more.js';
 
 export function renderHome() {
   const views = ['day', 'week', 'month'];
@@ -130,6 +131,11 @@ function renderDay() {
   if (isToday && D.weekday(today) === 0) {
     parts.push(`<button class="banner" data-action="plan-next-week">
       ${icon('calendar')}<span><b>It's Sunday.</b> Plan next week</span>${icon('chev-right')}</button>`);
+    const lb = S.getData().settings.lastBackup;
+    if (!lb || D.keyOfISO(lb) !== today) {
+      parts.push(`<button class="banner backup" data-action="backup">
+        ${icon('download')}<span><b>Sunday backup.</b> Save a copy to your Files</span>${icon('chev-right')}</button>`);
+    }
   }
   parts.push(renderDailyCheck(ui.date)); // shows on every day
   parts.push(renderDayTasks(ui.date));
@@ -169,7 +175,6 @@ function renderDayTasks(key) {
     out.push(`<section class="card work-card">
       <h2 class="card-title">${icon('briefcase')} At work ${work.length ? `<span class="count">${work.length}</span>` : ''}</h2>
       ${list('work-sort', work, 'Drag a task here to do it at work')}
-      <button class="add-inline" data-action="add-work" data-date="${key}">+ Add a task for work</button>
     </section>`);
   }
 
@@ -354,42 +359,40 @@ function renderDailyCheck(key) {
 }
 
 // ---------------------------------------------------------------- end-of-day review
+// Daily reflection: four short questions at the end of the day.
+const REFLECT = [
+  ['good', 'Something positive about today'],
+  ['better', 'One thing I could do better'],
+  ['tasks', 'How well did I complete my tasks?'],
+  ['goals', 'Did my tasks line up with my yearly goals?'],
+];
+
 function renderReview(key) {
-  const cats = S.gradeCategories(key);
-  const grade = S.getGrade(key);
-  const graded = cats.filter((c) => grade.scores[c.id]).length;
+  const r = S.getGrade(key).reflect || {};
+  const answered = REFLECT.filter(([id]) => (r[id] || '').trim()).length;
   const isToday = key === D.todayKey();
   const evening = new Date().getHours() >= 17;
-  const open = ui.reviewOpen ?? (graded > 0 || !isToday || evening);
-  const sub = graded === cats.length ? 'All graded. Nice reflection.'
-    : graded ? `${graded} of ${cats.length} graded`
-    : isToday ? (evening ? 'How did today go?' : 'Grade your day tonight') : 'Not graded';
-
-  const rows = cats.map((c) => {
-    const v = grade.scores[c.id] || 0;
-    const doneN = c.goal ? S.goalDoneOn(c.id, key) : null;
-    return `<li class="grade-row">
-      <div class="grade-label">
-        <span>${esc(c.label)}</span>
-        <small>${c.goal ? `${doneN} task${doneN === 1 ? '' : 's'} done toward this` : ''}${v ? `${c.goal ? ' · ' : ''}<b>${S.GRADE_LABELS[v]}</b>` : ''}</small>
-      </div>
-      <div class="grade-btns" role="group" aria-label="Grade ${esc(c.label)}">
-        ${[1, 2, 3, 4, 5].map((n) => `<button class="gbtn ${v === n ? 'on' : ''} ${v && n <= v ? 'fill' : ''}" data-action="grade" data-date="${key}" data-cat="${c.id}" data-score="${n}" aria-label="${n}: ${S.GRADE_LABELS[n]}" aria-pressed="${v === n}">${n}</button>`).join('')}
-      </div>
-    </li>`;
-  }).join('');
+  const open = ui.reviewOpen ?? (answered > 0 || !isToday || evening);
+  const sub = answered === REFLECT.length ? 'Done. Nice reflection.'
+    : answered ? `${answered} of ${REFLECT.length} answered`
+    : isToday ? (evening ? 'How did today go?' : 'Fill this in tonight') : 'Not filled in';
+  const tasks = S.tasksOn(key);
+  const doneN = tasks.filter((t) => S.isDoneOn(t, key)).length;
 
   return `
     <section class="card review-card ${open ? 'open' : ''}">
       <button class="check-toggle" data-action="review-open" aria-expanded="${open}">
         <span class="check-badge review">${icon('star')}</span>
-        <span class="check-text"><b>End-of-day review</b><small>${sub}</small></span>
+        <span class="check-text"><b>Daily reflection</b><small>${sub}</small></span>
         <span class="caret ${open ? 'up' : ''}">${icon('chev-down')}</span>
       </button>
-      ${open ? `
-        <p class="hint left">How well did you do in each area? 1 = rough, 5 = great.</p>
-        <ul class="grade-list">${rows}</ul>
-        <textarea class="notes-area small" data-gnote="${key}" rows="2" placeholder="Anything to remember about today? (optional)">${esc(grade.note || '')}</textarea>` : ''}
+      ${open ? `<div class="reflect">${REFLECT.map(([id, q]) => `
+        <label class="reflect-q">
+          <span>${esc(q)}</span>
+          ${id === 'tasks' && tasks.length ? `<small>You finished ${doneN} of ${tasks.length} task${tasks.length === 1 ? '' : 's'}.</small>` : ''}
+          <textarea class="notes-area small grow" data-reflect="${key}" data-field="${id}" rows="2">${esc(r[id] || '')}</textarea>
+        </label>`).join('')}
+      </div>` : ''}
     </section>`;
 }
 
@@ -608,6 +611,7 @@ export const homeActions = {
   'select-date': (el) => { ui.date = el.dataset.date; },
   'open-day': (el) => { ui.tab = 'home'; ui.page = null; ui.date = el.dataset.date; ui.view = 'day'; },
   'toggle-unscheduled': () => { ui.unscheduledOpen = !ui.unscheduledOpen; },
+  backup: () => { doExport(); return false; },
   'toggle-done': () => { ui.doneOpen = !ui.doneOpen; },
   'add-work': (el) => { openAddSheet({ date: el.dataset.date, defaults: { atWork: true } }); return false; },
   'toggle-past-days': () => { ui.showPastDays = !ui.showPastDays; },

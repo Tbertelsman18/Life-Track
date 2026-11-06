@@ -941,6 +941,13 @@ export function setGrade(key, catId, score) {
   save();
 }
 
+// Daily reflection answers, saved per day: { good, better, tasks, goals }
+export function setReflection(key, field, value) {
+  const g = data.grades[key] || (data.grades[key] = { scores: {}, note: '' });
+  g.reflect = { ...(g.reflect || {}), [field]: value };
+  saveQuietly();
+}
+
 export function setGradeNote(key, note) {
   const g = data.grades[key] || (data.grades[key] = { scores: {}, note: '' });
   g.note = note;

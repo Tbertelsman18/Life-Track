@@ -203,7 +203,7 @@ function renderDayTasks(key) {
   const tasksCard = `<section class="card">
     <h2 class="card-title">${isToday ? "Today's Tasks" : 'Tasks'} ${rest.length ? `<span class="count">${rest.length}</span>` : ''}</h2>
     ${list('day-sort', rest, open.length ? 'Nothing else today' : done.length ? 'All done. Nice work.' : 'Nothing planned. Tap + to add a task.')}
-    ${open.length > 1 ? `<p class="hint left">Drag ${icon('drag')} to change the order.</p>` : ''}
+    ${open.length > 1 ? `<p class="hint left">Press and hold ${icon('drag')}, then drag to change the order.</p>` : ''}
   </section>`;
 
   if (work.length) out.push(workCard, tasksCard);
@@ -619,7 +619,10 @@ export function afterHome() {
   for (const el of [work, rest]) {
     if (!el) continue;
     window.Sortable.create(el, {
-      group: 'day-tasks', handle: '.drag', animation: 150, ghostClass: 'drag-ghost',
+      group: 'day-tasks', handle: '.drag', animation: 150, ghostClass: 'drag-ghost', chosenClass: 'drag-chosen',
+      // Press and hold the handle for about a second before it moves, so a
+      // hand resting on the edge of the screen while scrolling won't drag it.
+      delay: 1000, delayOnTouchOnly: true, touchStartThreshold: 8,
       onEnd: (e) => { if (e.from !== e.to || e.oldIndex !== e.newIndex) save(); },
     });
   }

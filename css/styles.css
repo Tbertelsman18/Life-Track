@@ -831,3 +831,7 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .reflect-q textarea { resize: none; overflow: hidden; background: var(--fill); }
 .group-label.first { margin-top: 4px; }
 .rep-seg, .start-seg { margin-top: 12px; }
+
+/* A task picked up for dragging lifts slightly so you know it's ready to move */
+.task.drag-chosen { background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,0.14); border-radius: 12px; transform: scale(1.02); }
+.task-list .drag { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

@@ -197,10 +197,12 @@ function renderDayTasks(key) {
 }
 
 // Events, milestones and tasks for one day, as a list.
+// Week view: a day's events, milestones and open tasks. Finished tasks are
+// left out (the day's header still shows how many are done, e.g. 2/3).
 function dayItems(key, { compact = false } = {}) {
   const events = S.eventsOn(key);
-  const miles = S.milestonesOn(key);
-  const tasks = S.tasksOn(key);
+  const miles = S.milestonesOn(key).filter((m) => !m.done);
+  const tasks = S.tasksOn(key).filter((t) => !S.isDoneOn(t, key));
   if (!events.length && !miles.length && !tasks.length) return '';
   return `<ul class="task-list ${compact ? 'compact' : ''}">
     ${events.map((e) => eventRow(e, key)).join('')}

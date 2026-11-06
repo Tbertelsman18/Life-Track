@@ -87,6 +87,21 @@ let data = load();
 orderSteps();
 // Routines made before "stay until done" existed start counting from today.
 for (const i of data.dailyCheck.items) if (!i.since) i.since = D.todayKey();
+// Recurring tasks now use the same Sections as tasks (Personal, Work, ...).
+// Older ones had their own category name: match it to a section, or add one.
+for (const i of data.dailyCheck.items) {
+  const name = (i.category || '').trim();
+  if (name && !i.sectionId) {
+    let sec = data.sections.find((s) => s.name.toLowerCase() === name.toLowerCase());
+    if (!sec) {
+      const used = new Set(data.sections.map((s) => s.color));
+      sec = { id: uid(), name, color: SECTION_COLORS.find((c) => !used.has(c)) || SECTION_COLORS[0] };
+      data.sections.push(sec);
+    }
+    i.sectionId = sec.id;
+  }
+  delete i.category;
+}
 
 function load() {
   try {
@@ -181,7 +196,7 @@ export function updateSection(id, changes) {
 // Tasks, events and projects in a deleted section move to another section.
 export function deleteSection(id, moveToId) {
   data.sections = data.sections.filter((s) => s.id !== id);
-  for (const list of [data.tasks, data.events, data.projects]) {
+  for (const list of [data.tasks, data.events, data.projects, data.dailyCheck.items]) {
     list.forEach((x) => { if (x.sectionId === id) x.sectionId = moveToId || null; });
   }
   save();
@@ -577,23 +592,18 @@ export function routinesOn(key) {
   return data.dailyCheck.items.filter((i) => routineScheduledOn(i, key) || routineCarried(i, key));
 }
 
-// Routine categories in the order they first appear (e.g. Work, Maintenance).
-export function routineCategories() {
-  return [...new Set(data.dailyCheck.items.map((i) => (i.category || '').trim()).filter(Boolean))];
-}
-
-export function addCheckItem(title, days = ALL_DAYS, category = '', every = 1, start = null) {
+export function addCheckItem(title, days = ALL_DAYS, sectionId = null, every = 1, start = null) {
   data.dailyCheck.items.push({ id: uid(), title: title.trim(), days: [...days].sort(),
-    category: (category || '').trim(), since: D.todayKey(), every, start });
+    sectionId: sectionId || null, since: D.todayKey(), every, start });
   save();
 }
 
-export function updateCheckItem(id, { title, days, category, every, start }) {
+export function updateCheckItem(id, { title, days, sectionId, every, start }) {
   const i = data.dailyCheck.items.find((x) => x.id === id);
   if (!i) return;
   if (title !== undefined) i.title = title.trim();
   if (days !== undefined) i.days = [...days].sort();
-  if (category !== undefined) i.category = (category || '').trim();
+  if (sectionId !== undefined) i.sectionId = sectionId || null;
   if (every !== undefined) { i.every = every; i.start = start; }
   save();
 }

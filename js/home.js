@@ -300,12 +300,13 @@ export function taskRow(t, key, { showDate = false, num = null, drag = false } =
 const repeatLabel = (days) => D.daysLabel(days);
 
 // ---------------------------------------------------------------- daily check
-// Routine items grouped by category: [{ name, items }], uncategorized first.
+// Recurring tasks grouped by Section (same order as More → Sections), no section first.
 function byCategory(items) {
   const groups = new Map([['', []]]);
-  for (const c of S.routineCategories()) groups.set(c, []);
-  for (const i of items) groups.get((i.category || '').trim())?.push(i);
-  return [...groups].filter(([, list]) => list.length).map(([name, list]) => ({ name, items: list }));
+  for (const s of S.getData().sections) groups.set(s.id, []);
+  for (const i of items) (groups.get(i.sectionId || '') || groups.get('')).push(i);
+  return [...groups].filter(([, list]) => list.length)
+    .map(([id, list]) => ({ name: S.getSection(id)?.name || '', items: list }));
 }
 // "Since Monday" under a weekly routine that's waiting to be done.
 function carriedNote(i, key) {
@@ -333,7 +334,7 @@ function renderDailyCheck(key) {
           <li class="task" data-id="${i.id}">
             <span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>
             <button class="task-main" data-action="check-rename" data-id="${i.id}"><span class="task-title">${esc(i.title)}</span>
-              <span class="task-meta">${icon('repeat')} ${esc(S.routineLabel(i))}${S.isWeeklyRoutine(i) ? ' · until done' : ''}${i.category ? ` · ${esc(i.category)}` : ''}</span></button>
+              <span class="task-meta">${icon('repeat')} ${esc(S.routineLabel(i))}${S.isWeeklyRoutine(i) ? ' · until done' : ''}${S.getSection(i.sectionId) ? ` · ${esc(S.getSection(i.sectionId).name)}` : ''}</span></button>
             <button class="icon-btn sm danger" data-action="check-remove" data-id="${i.id}" aria-label="Remove">${icon('x')}</button>
           </li>`).join('')}
       </ul>
@@ -344,7 +345,7 @@ function renderDailyCheck(key) {
   } else if (key > D.todayKey()) {
     // A future day: show the same items, ready to check off on the day.
     body = `<ul class="task-list compact">
-      ${byCategory(items).map((g) => catHead(g.name) + g.items.map((i) => `<li class="task upcoming" style="--c:var(--accent)">
+      ${byCategory(items).map((g) => catHead(g.name) + g.items.map((i) => `<li class="task upcoming" style="--c:${i.sectionId ? sectionColor(i.sectionId) : 'var(--accent)'}">
           <span class="check" aria-hidden="true"></span>
           <span class="task-main static"><span class="task-title">${esc(i.title)}</span>${carriedNote(i, key)}</span>
         </li>`).join('')).join('')}
@@ -354,7 +355,7 @@ function renderDailyCheck(key) {
     body = `<ul class="task-list compact">
       ${byCategory(items).map((g) => catHead(g.name) + g.items.map((i) => {
         const on = S.isChecked(i.id, key);
-        return `<li class="task ${on ? 'done' : ''}" style="--c:var(--accent)">
+        return `<li class="task ${on ? 'done' : ''}" style="--c:${i.sectionId ? sectionColor(i.sectionId) : 'var(--accent)'}">
           <button class="check" data-action="check-toggle" data-id="${i.id}" data-date="${key}" aria-label="${on ? 'Uncheck' : 'Check'}">${on ? icon('check') : ''}</button>
           <button class="task-main" data-action="check-toggle" data-id="${i.id}" data-date="${key}"><span class="task-title">${esc(i.title)}</span>${carriedNote(i, key)}</button>
         </li>`;

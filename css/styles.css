@@ -836,3 +836,4 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .task.drag-chosen { background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,0.14); border-radius: 12px; transform: scale(1.02); }
 .task-list .drag { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .proj-card.drag-chosen, li.drag-chosen > .proj-card { box-shadow: 0 8px 22px rgba(0,0,0,0.16); transform: scale(1.02); }
+.cat-chips .chip .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }

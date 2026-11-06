@@ -391,8 +391,7 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
   const item = id ? S.getData().dailyCheck.items.find((i) => i.id === id) : null;
   // A new routine starts with no days picked: tap the days it should show on.
   const days = new Set(item ? S.routineDays(item) : []);
-  let category = item ? (item.category || '') : (defaults.category || '');
-  const cats = () => [...new Set([...S.routineCategories(), category].filter(Boolean))];
+  let sectionId = item ? (item.sectionId || '') : (defaults.sectionId || '');
   const presets = [['Every day', S.ALL_DAYS], ['Weekdays', [1, 2, 3, 4, 5]], ['Weekends', [0, 6]]];
   // Every week, or every other week starting this week or next week
   const thisMon = D.startOfWeek(D.todayKey());
@@ -432,7 +431,7 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
       </div>
       <div class="field-group">
         <div class="field col">
-          <span>Category <small class="opt">optional</small></span>
+          <span>Section <small class="opt">same list as your tasks</small></span>
           <div class="cat-chips"></div>
         </div>
       </div>
@@ -466,15 +465,17 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
   };
   form.querySelectorAll('[data-every]').forEach((b) => b.addEventListener('click', () => { every = Number(b.dataset.every); paint(); }));
   form.querySelectorAll('[data-start]').forEach((b) => b.addEventListener('click', () => { startWeek = b.dataset.start; paint(); }));
+  // Section chips: the same Sections your tasks use (Personal, Work, ...)
   const paintCats = () => {
     const box = form.querySelector('.cat-chips');
-    box.innerHTML = [['', 'None'], ...cats().map((c) => [c, c])].map(([v, label]) => `
-      <button type="button" class="chip ${category === v ? 'on' : ''}" data-cat="${esc(v)}" aria-pressed="${category === v}">${esc(label)}</button>`).join('')
-      + '<button type="button" class="chip add" data-cat-new>+ New</button>';
-    box.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { category = b.dataset.cat; paintCats(); }));
+    box.innerHTML = [...S.getData().sections.map((s) => [s.id, s.name, s.color]), ['', 'None', null]].map(([v, label, color]) => `
+      <button type="button" class="chip ${sectionId === v ? 'on' : ''}" data-cat="${esc(v)}" aria-pressed="${sectionId === v}">
+        ${color ? `<i class="swatch" style="background:${color}"></i>` : ''}${esc(label)}</button>`).join('')
+      + '<button type="button" class="chip add" data-cat-new>+ New section</button>';
+    box.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { sectionId = b.dataset.cat; paintCats(); }));
     box.querySelector('[data-cat-new]').addEventListener('click', () => {
-      const name = prompt('New category (e.g. Work, Maintenance):');
-      if (name && name.trim()) { category = name.trim(); paintCats(); }
+      const name = prompt('Name for the new section (it is added for tasks too):');
+      if (name && name.trim()) { sectionId = S.addSection(name).id; paintCats(); }
     });
   };
   paintCats();
@@ -499,8 +500,8 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
     if (!title) return;
     if (!days.size) { toast('Pick at least one day'); return; }
     const start = every === 2 ? (startWeek === 'next' ? nextMon : thisMon) : null;
-    if (item) S.updateCheckItem(item.id, { title, days: [...days], category, every, start });
-    else { S.addCheckItem(title, [...days], category, every, start); toast('Added to Recurring tasks'); }
+    if (item) S.updateCheckItem(item.id, { title, days: [...days], sectionId, every, start });
+    else { S.addCheckItem(title, [...days], sectionId, every, start); toast('Added to Recurring tasks'); }
     closeSheet();
   });
 }

@@ -18,7 +18,7 @@ All six stages are built:
 ## Recent changes
 
 - **Goals is switched off for now.** The Goals tab, goal pickers and goal cards are hidden, and your goal data is kept. To bring it back, set `GOALS_ON = true` in `js/store.js` and put the Goals tab button back in `index.html`.
-- **Day page:** events are in their own box, then an **At work** box on weekdays, then **Today's Tasks**. Open tasks are numbered in the order you plan to do them. Press and hold the handle on the right for about a second, then drag to reorder or move a task in or out of At work. Finished tasks go into a collapsed **Done** box.
+- **Day page:** events are in their own box, then an **At work** box on weekdays, then **Today's Tasks**. Open tasks are numbered in the order you plan to do them. Press and hold the handle on the right for 2 seconds, then drag to reorder or move a task in or out of At work. Finished tasks go into a collapsed **Done** box.
 - **Simpler Add task:** just the name, the date (already set to the day you are on) and an optional time. Repeat, section, project, Important and notes are under **More options**. To put a task in At work, use "+ Add a task for work" or drag it in.
 
 - **Recurring tasks** (was Routines, before that Daily Check): simple things you repeat each week, all year. Pick the days each one shows on and, optionally, a category (e.g. Work, Maintenance) to group them. Routines can repeat every week or every other week. A routine on one day (e.g. fish tank on Monday) stays on your list from that day until you check it off. Add one with **+ → Recurring**; change it with **Edit recurring tasks**.

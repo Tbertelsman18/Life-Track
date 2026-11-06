@@ -139,13 +139,18 @@ export function toast(msg) {
 }
 
 // Drag-to-reorder using the SortableJS library (loaded in index.html).
+// How long to press and hold a drag handle (≡) before it can move, so a hand
+// resting on the edge of the screen while scrolling doesn't drag things.
+export const HOLD_TO_DRAG_MS = 2000;
+export const holdOptions = { delay: HOLD_TO_DRAG_MS, delayOnTouchOnly: true, touchStartThreshold: 8, chosenClass: 'drag-chosen' };
+
 export function makeSortable(el, onEnd) {
   if (!el || !window.Sortable) return;
   window.Sortable.create(el, {
     handle: '.drag',
     animation: 150,
-    delay: 0,
     ghostClass: 'drag-ghost',
+    ...holdOptions,
     onEnd: () => onEnd([...el.children].map((c) => c.dataset.id).filter(Boolean)),
   });
 }

@@ -29,7 +29,7 @@ export function renderProjects() {
   let body;
   if (!list.length) {
     body = {
-      active: `<p class="empty big">No active projects yet.<br>Add one and drag to set priority (#1 at the top).</p>`,
+      active: `<p class="empty big">No active projects yet.<br>Add one, then press and hold ≡ to drag it into priority order (#1 at the top).</p>`,
       radar: `<p class="empty big">Radar holds projects that have come up but aren't active yet.</p>`,
       done: `<p class="empty big">Finished projects show up here.</p>`,
     }[ui.projectsTab];

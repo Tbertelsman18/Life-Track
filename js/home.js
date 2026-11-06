@@ -2,7 +2,7 @@
 
 import * as D from './dates.js';
 import * as S from './store.js';
-import { ui, esc, icon, rerender, go, sectionColor, makeSortable, toast } from './ui.js';
+import { ui, esc, icon, rerender, go, sectionColor, makeSortable, holdOptions, toast } from './ui.js';
 import { openTaskSheet, openEventSheet, openAddSheet, openDailySheet } from './forms.js';
 import { doExport } from './more.js';
 
@@ -619,10 +619,8 @@ export function afterHome() {
   for (const el of [work, rest]) {
     if (!el) continue;
     window.Sortable.create(el, {
-      group: 'day-tasks', handle: '.drag', animation: 150, ghostClass: 'drag-ghost', chosenClass: 'drag-chosen',
-      // Press and hold the handle for about a second before it moves, so a
-      // hand resting on the edge of the screen while scrolling won't drag it.
-      delay: 1000, delayOnTouchOnly: true, touchStartThreshold: 8,
+      group: 'day-tasks', handle: '.drag', animation: 150, ghostClass: 'drag-ghost',
+      ...holdOptions, // press and hold the handle before it moves
       onEnd: (e) => { if (e.from !== e.to || e.oldIndex !== e.newIndex) save(); },
     });
   }

@@ -3,11 +3,11 @@
 import * as D from './dates.js';
 import * as S from './store.js';
 import { ui, esc, icon, go, pct, progressBar, sectionColor, pageHeader, toast } from './ui.js';
-import { openSectionSheet, openTaskSheet } from './forms.js';
+import { openSectionSheet, openTaskSheet, openIdeaSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.25 (Nov 6)';
+export const APP_VERSION = '1.26 (Nov 7)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -47,9 +47,11 @@ export function renderMore() {
         <li><button class="row" data-action="open-history">${icon('chart')}<span class="row-label">History</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-repeating">${icon('repeat')}<span class="row-label">Repeating tasks</span>
           <span class="row-value">${S.repeatingTasks().length}</span>${icon('chev-right')}</button></li>
+        <li><button class="row" data-action="open-ideas">${icon('sun')}<span class="row-label">Ideas</span>
+          <span class="row-value">${data.ideas.length}</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-info">${icon('info')}<span class="row-label">Info</span>
           <span class="row-value">${data.info.length}</span>${icon('chev-right')}</button></li>
-        <li><button class="row" data-action="open-pushed">${icon('turtle')}<span class="row-label">Most Pushed Off</span>${icon('chev-right')}</button></li>
+        <li><button class="row" data-action="open-pushed">${icon('turtle')}<span class="row-label">Pushed off &amp; not completed</span>${icon('chev-right')}</button></li>
       </ul>
 
       <h3 class="group-label">Sections</h3>
@@ -319,11 +321,40 @@ export function renderRepeating() {
 }
 
 export function renderPushed() {
+  const missed = S.missedTasks(30);
   return `
-    ${pageHeader('Most Pushed Off', { backLabel: 'More' })}
+    ${pageHeader('Pushed off & not completed', { backLabel: 'More' })}
     <div class="view-body">
+      <section class="card">
+        <h2 class="card-title">Not completed · last 30 days <span class="count">${missed.length}</span></h2>
+        ${missed.length ? `<ul class="task-list">${missed.map((t) => `
+          <li class="task" style="--c:${sectionColor(t.sectionId)}">
+            <span class="swatch" style="background:var(--c)"></span>
+            <span class="task-main static"><span class="task-title">${esc(t.title)}</span>
+              <span class="task-meta">Planned ${esc(D.formatShort(t.date))}${S.getSection(t.sectionId) ? ' · ' + esc(S.getSection(t.sectionId).name) : ''}</span></span>
+            <button class="link small" data-action="missed-undo" data-id="${t.id}">Put back</button>
+          </li>`).join('')}</ul>`
+        : '<p class="empty small">Nothing marked not completed.</p>'}
+        <p class="hint left">"Put back" moves it to today.</p>
+      </section>
+      <h3 class="group-label">Most pushed off</h3>
       <p class="hint">What you move to a later day most often. These might need a better time, a smaller first step, or to be dropped.</p>
       <section class="card">${pushedList(30)}</section>
+    </div>`;
+}
+
+export function renderIdeas() {
+  const ideas = S.getData().ideas;
+  return `
+    ${pageHeader('Ideas', { backLabel: 'More' })}
+    <div class="view-body">
+      <button class="btn wide primary" data-action="new-idea">${icon('plus')} New idea</button>
+      ${ideas.length ? `<ul class="info-list">${ideas.map((i) => `
+        <li><button class="info-card" data-action="edit-idea" data-id="${i.id}">
+          <span class="info-body">${esc(i.text)}</span>
+          <span class="task-meta">${esc(D.formatShort(D.keyOfISO(i.createdAt)))}</span>
+        </button></li>`).join('')}</ul>`
+      : '<p class="empty">Ideas that pop into your head. Add one here, or with <b>+ → Idea</b>.</p>'}
     </div>`;
 }
 
@@ -374,6 +405,10 @@ function doImport() {
 
 export const moreActions = {
   'open-planning': () => { ui.tab = 'more'; go({ type: 'planning' }); return false; },
+  'open-ideas': () => { ui.tab = 'more'; go({ type: 'ideas' }); return false; },
+  'new-idea': () => { openIdeaSheet(); return false; },
+  'edit-idea': (el) => { openIdeaSheet({ id: el.dataset.id }); return false; },
+  'missed-undo': (el) => { S.unmarkMissed(el.dataset.id); toast('Moved to today'); return false; },
   'open-info': () => { ui.tab = 'more'; go({ type: 'info' }); return false; },
   'open-history': () => { ui.tab = 'more'; go({ type: 'history' }); return false; },
   'open-repeating': () => { ui.tab = 'more'; go({ type: 'repeating' }); return false; },

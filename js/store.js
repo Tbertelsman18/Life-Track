@@ -63,6 +63,7 @@ function defaultData() {
     lists: [],
     grades: {},
     dayOrder: {},
+    ideas: [],
   };
 }
 
@@ -137,6 +138,7 @@ function migrate(d) {
     lists: arr(d.lists),
     grades: d.grades && typeof d.grades === 'object' ? d.grades : {},
     dayOrder: d.dayOrder && typeof d.dayOrder === 'object' ? d.dayOrder : {},
+    ideas: arr(d.ideas),
   };
 }
 
@@ -336,10 +338,60 @@ const byTimeThenCreated = (key) => (a, b) => {
   return (a.createdAt || '').localeCompare(b.createdAt || '');
 };
 
+// One-time tasks from earlier days that weren't finished (and weren't marked
+// "not completed"). The Day page asks what to do with them.
+export function overdueTasks(today = D.todayKey()) {
+  return data.tasks
+    .filter((t) => !t.repeat && !t.done && !t.missed && t.date && t.date < today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// "Not completed": the task leaves your lists but is kept for tracking.
+export function markMissed(id) {
+  const t = getTask(id);
+  if (!t) return;
+  t.missed = true;
+  t.missedAt = nowISO();
+  save();
+}
+
+// Undo "not completed": put the task back on a day (today by default).
+export function unmarkMissed(id, date = D.todayKey()) {
+  const t = getTask(id);
+  if (!t) return;
+  t.missed = false;
+  t.missedAt = null;
+  t.date = date;
+  save();
+}
+
+// Tasks marked "not completed" in the last n days, newest first.
+export function missedTasks(days = 30) {
+  const cutoff = D.addDays(D.todayKey(), -days);
+  return data.tasks
+    .filter((t) => t.missed && t.missedAt && D.keyOfISO(t.missedAt) >= cutoff)
+    .sort((a, b) => b.missedAt.localeCompare(a.missedAt));
+}
+
+// ---------- Ideas ----------
+// Quick thoughts, kept separate from tasks.
+export function addIdea(text) {
+  data.ideas.unshift({ id: uid(), text: text.trim(), createdAt: nowISO() });
+  save();
+}
+export function updateIdea(id, text) {
+  const i = data.ideas.find((x) => x.id === id);
+  if (i) { i.text = text.trim(); save(); }
+}
+export function deleteIdea(id) {
+  data.ideas = data.ideas.filter((x) => x.id !== id);
+  save();
+}
+
 // Tasks on a day: not done first (in the order you dragged them into,
 // otherwise timed in time order, then untimed), then finished tasks at the bottom.
 export function tasksOn(key) {
-  return data.tasks.filter((t) => occursOn(t, key)).sort(byTimeThenCreated(key));
+  return data.tasks.filter((t) => !t.missed && occursOn(t, key)).sort(byTimeThenCreated(key));
 }
 
 // Save the order you dragged a day's tasks into. workIds are the tasks now in

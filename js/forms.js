@@ -51,6 +51,7 @@ function kindSwitch(kind) {
     <button type="button" class="seg-btn ${kind === 'task' ? 'on' : ''}" data-kind="task">Task</button>
     <button type="button" class="seg-btn ${kind === 'event' ? 'on' : ''}" data-kind="event">Event</button>
     <button type="button" class="seg-btn ${kind === 'daily' ? 'on' : ''}" data-kind="daily">Recurring</button>
+    <button type="button" class="seg-btn ${kind === 'idea' ? 'on' : ''}" data-kind="idea">Idea</button>
   </div>`;
 }
 
@@ -62,8 +63,27 @@ function wireKindSwitch(form, current, ctx) {
     const defaults = { ...ctx.defaults, title };
     if (b.dataset.kind === 'event') openEventSheet({ date, defaults, allowSwitch: true });
     else if (b.dataset.kind === 'daily') openDailySheet({ date, defaults });
+    else if (b.dataset.kind === 'idea') openIdeaSheet({ defaults });
     else openTaskSheet({ date, defaults, allowSwitch: true });
   }));
+}
+
+// Section chips (Personal, Work, ...) with a "+ New section" chip. Calls
+// onPick(id) when one is tapped; '' means no section.
+function wireSectionChips(box, selected, onPick) {
+  let current = selected || '';
+  const paint = () => {
+    box.innerHTML = [...S.getData().sections.map((s) => [s.id, s.name, s.color]), ['', 'None', null]].map(([v, label, color]) => `
+      <button type="button" class="chip ${current === v ? 'on' : ''}" data-sec="${esc(v)}" aria-pressed="${current === v}">
+        ${color ? `<i class="swatch" style="background:${color}"></i>` : ''}${esc(label)}</button>`).join('')
+      + '<button type="button" class="chip add" data-sec-new>+ New section</button>';
+    box.querySelectorAll('[data-sec]').forEach((b) => b.addEventListener('click', () => { current = b.dataset.sec; onPick(current); paint(); }));
+    box.querySelector('[data-sec-new]').addEventListener('click', () => {
+      const name = prompt('Name for the new section:');
+      if (name && name.trim()) { current = S.addSection(name).id; onPick(current); paint(); }
+    });
+  };
+  paint();
 }
 
 export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwitch = false } = {}) {
@@ -111,17 +131,19 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
         </label>
       </div>
 
+      <div class="field-group">
+        <div class="field col">
+          <span>Section</span>
+          <div class="cat-chips task-secs"></div>
+          <input type="hidden" name="sectionId" value="${esc(v.sectionId || '')}">
+        </div>
+      </div>
+
       <button type="button" class="more-toggle" data-act="more" aria-expanded="false">
-        More options <small>repeat, section, project${notesUp ? '' : ', notes'}</small> ${icon('chev-down')}
+        More options <small>repeat, project${notesUp ? '' : ', notes'}</small> ${icon('chev-down')}
       </button>
 
       <div class="more-opts" hidden>
-      <div class="field-group">
-        <label class="field">
-          <span>Section</span>
-          <select name="sectionId">${sectionOptions(v.sectionId)}</select>
-        </label>
-      </div>
 
       <div class="field-group">
         <label class="field">
@@ -161,7 +183,8 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
         </div>` : ''}
 
       ${t && !t.repeat && t.date && !t.done ? `
-        <button type="button" class="btn wide" data-act="push-tomorrow">Push to tomorrow</button>` : ''}
+        <button type="button" class="btn wide" data-act="push-tomorrow">Push to tomorrow</button>
+        <button type="button" class="btn wide" data-act="missed">Mark as not completed</button>` : ''}
       ${pushInfo}
 
       ${t ? `<button type="button" class="btn danger wide" data-act="delete">Delete task</button>` : ''}
@@ -170,7 +193,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   const form = $('#task-form');
   if (!t) setTimeout(() => form.title.focus(), 50);
   if (allowSwitch && !t) wireKindSwitch(form, 'task', { date, defaults });
-  wireSectionSelect(form.sectionId, v.sectionId);
+  wireSectionChips(form.querySelector('.task-secs'), v.sectionId, (id) => { form.sectionId.value = id; });
 
   // Long names and notes grow to fit instead of scrolling inside a tiny box.
   const fit = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
@@ -254,6 +277,11 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       S.deleteTask(t.id);
       closeSheet();
     }
+  });
+  on('missed', () => {
+    S.markMissed(t.id);
+    closeSheet();
+    toast('Marked not completed');
   });
   on('push-tomorrow', () => {
     S.updateTask(t.id, { date: D.addDays(t.date, 1) });
@@ -466,19 +494,7 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
   form.querySelectorAll('[data-every]').forEach((b) => b.addEventListener('click', () => { every = Number(b.dataset.every); paint(); }));
   form.querySelectorAll('[data-start]').forEach((b) => b.addEventListener('click', () => { startWeek = b.dataset.start; paint(); }));
   // Section chips: the same Sections your tasks use (Personal, Work, ...)
-  const paintCats = () => {
-    const box = form.querySelector('.cat-chips');
-    box.innerHTML = [...S.getData().sections.map((s) => [s.id, s.name, s.color]), ['', 'None', null]].map(([v, label, color]) => `
-      <button type="button" class="chip ${sectionId === v ? 'on' : ''}" data-cat="${esc(v)}" aria-pressed="${sectionId === v}">
-        ${color ? `<i class="swatch" style="background:${color}"></i>` : ''}${esc(label)}</button>`).join('')
-      + '<button type="button" class="chip add" data-cat-new>+ New section</button>';
-    box.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { sectionId = b.dataset.cat; paintCats(); }));
-    box.querySelector('[data-cat-new]').addEventListener('click', () => {
-      const name = prompt('Name for the new section (it is added for tasks too):');
-      if (name && name.trim()) { sectionId = S.addSection(name).id; paintCats(); }
-    });
-  };
-  paintCats();
+  wireSectionChips(form.querySelector('.cat-chips'), sectionId, (id) => { sectionId = id; });
   form.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => {
     const d = Number(b.dataset.day);
     if (days.has(d)) days.delete(d); else days.add(d);
@@ -502,6 +518,36 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
     const start = every === 2 ? (startWeek === 'next' ? nextMon : thisMon) : null;
     if (item) S.updateCheckItem(item.id, { title, days: [...days], sectionId, every, start });
     else { S.addCheckItem(title, [...days], sectionId, every, start); toast('Added to Recurring tasks'); }
+    closeSheet();
+  });
+}
+
+// ---------------------------------------------------------------- ideas
+// Jot down an idea (kept separate from tasks). Open with an id to edit it.
+export function openIdeaSheet({ id = null, defaults = {} } = {}) {
+  const idea = id ? S.getData().ideas.find((i) => i.id === id) : null;
+  openSheet(`
+    <form class="sheet-form" id="idea-form" autocomplete="off">
+      ${sheetTop(idea ? 'Edit Idea' : 'New', { saveLabel: 'Save' })}
+      ${idea ? '' : kindSwitch('idea')}
+      <textarea class="title-input grow idea-input" name="title" rows="3" placeholder="What's the idea?" required>${esc(idea ? idea.text : defaults.title || '')}</textarea>
+      <p class="hint">Ideas are kept in <b>More → Ideas</b>, separate from your tasks.</p>
+      ${idea ? `<button type="button" class="btn danger wide" data-act="delete">Delete idea</button>` : ''}
+    </form>`);
+  const form = $('#idea-form');
+  const fit = () => { form.title.style.height = 'auto'; form.title.style.height = form.title.scrollHeight + 2 + 'px'; };
+  form.title.addEventListener('input', fit);
+  requestAnimationFrame(fit);
+  if (!idea) { setTimeout(() => form.title.focus(), 50); wireKindSwitch(form, 'idea', { date: D.todayKey(), defaults }); }
+  form.querySelector('[data-act="delete"]')?.addEventListener('click', () => {
+    if (confirm('Delete this idea?')) { S.deleteIdea(idea.id); closeSheet(); }
+  });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = form.title.value.trim();
+    if (!text) return;
+    if (idea) S.updateIdea(idea.id, text);
+    else { S.addIdea(text); toast('Idea saved'); }
     closeSheet();
   });
 }

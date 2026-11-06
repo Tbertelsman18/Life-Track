@@ -837,3 +837,21 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .task-list .drag { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .proj-card.drag-chosen, li.drag-chosen > .proj-card { box-shadow: 0 8px 22px rgba(0,0,0,0.16); transform: scale(1.02); }
 .cat-chips .chip .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+/* Not finished from earlier days */
+.overdue-card { border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); }
+.overdue-card .card-title .ic { color: var(--warn); }
+.od-row { list-style: none; padding: 10px 0; border-top: 1px solid var(--line); }
+.od-title { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.od-title span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.od-title small { color: var(--muted); font-size: 13px; flex: none; }
+.od-title .swatch { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.od-btns { display: flex; gap: 8px; margin-top: 8px; padding-left: 19px; flex-wrap: wrap; }
+.od-btns .chip { padding: 6px 12px; min-height: 34px; font-size: 14px; }
+.chip.danger { color: var(--danger, #b5483b); }
+.chip .ic { width: 15px; height: 15px; }
+.idea-input { min-height: 96px; }
+.kind-seg .seg-btn { padding-left: 4px; padding-right: 4px; }
+.od-btns { flex-wrap: nowrap; padding-left: 0; gap: 6px; }
+.od-btns .chip { padding: 6px 11px; font-size: 13.5px; white-space: nowrap; }
+.od-btns .chip.danger { margin-left: auto; padding: 6px 10px; }

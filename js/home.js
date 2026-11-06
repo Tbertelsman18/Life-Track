@@ -137,11 +137,35 @@ function renderDay() {
         ${icon('download')}<span><b>Sunday backup.</b> Save a copy to your Files</span>${icon('chev-right')}</button>`);
     }
   }
+  if (isToday) parts.push(renderOverdue(today));
   parts.push(renderDailyCheck(ui.date)); // shows on every day
   parts.push(renderDayTasks(ui.date));
   parts.push(renderUnscheduled());
   if (ui.date <= today) parts.push(renderReview(ui.date));
   return parts.join('');
+}
+
+// Tasks from earlier days that weren't finished: move to today, mark
+// "not completed" (kept for tracking), or delete.
+function renderOverdue(today) {
+  const list = S.overdueTasks(today);
+  if (!list.length) return '';
+  const yesterday = D.addDays(today, -1);
+  const allYesterday = list.every((t) => t.date === yesterday);
+  return `<section class="card overdue-card">
+    <h2 class="card-title">${icon('clock')} ${allYesterday ? 'Not finished yesterday' : 'Not finished'} <span class="count">${list.length}</span></h2>
+    <p class="hint left">What do you want to do with ${list.length === 1 ? 'this one' : 'these'}?</p>
+    <ul class="task-list">${list.map((t) => `
+      <li class="od-row" style="--c:${sectionColor(t.sectionId)}">
+        <div class="od-title"><span class="swatch" style="background:var(--c)"></span>
+          <span>${esc(t.title)}</span><small>${t.date === yesterday ? 'Yesterday' : esc(D.formatShort(t.date))}</small></div>
+        <div class="od-btns">
+          <button class="chip on" data-action="od-today" data-id="${t.id}">Move to today</button>
+          <button class="chip" data-action="od-missed" data-id="${t.id}">Not completed</button>
+          <button class="chip danger" data-action="od-delete" data-id="${t.id}" aria-label="Delete">${icon('trash')}</button>
+        </div>
+      </li>`).join('')}</ul>
+  </section>`;
 }
 
 // The day's plan: events, then the "At work" box, then everything else.
@@ -501,7 +525,7 @@ function renderWeek() {
 // Plan mode: unscheduled and overdue tasks, each with one-tap day buttons.
 function renderToSchedule(days) {
   const today = D.todayKey();
-  const overdue = S.getData().tasks.filter((t) => !t.repeat && !t.done && t.date && t.date < today);
+  const overdue = S.overdueTasks(today);
   const unscheduled = S.unscheduledTasks().filter((t) => !t.done);
   const list = [...overdue, ...unscheduled];
   return `
@@ -641,6 +665,13 @@ export const homeActions = {
   'open-day': (el) => { ui.tab = 'home'; ui.page = null; ui.date = el.dataset.date; ui.view = 'day'; },
   'toggle-unscheduled': () => { ui.unscheduledOpen = !ui.unscheduledOpen; },
   backup: () => { doExport(); return false; },
+  'od-today': (el) => { S.updateTask(el.dataset.id, { date: D.todayKey() }); toast('Moved to today'); return false; },
+  'od-missed': (el) => { S.markMissed(el.dataset.id); toast('Marked not completed'); return false; },
+  'od-delete': (el) => {
+    const t = S.getTask(el.dataset.id);
+    if (t && confirm(`Delete "${t.title}"?`)) S.deleteTask(t.id);
+    return false;
+  },
   'toggle-done': () => { ui.doneOpen = !ui.doneOpen; },
   'add-work': (el) => { openAddSheet({ date: el.dataset.date, defaults: { atWork: true } }); return false; },
   'toggle-past-days': () => { ui.showPastDays = !ui.showPastDays; },

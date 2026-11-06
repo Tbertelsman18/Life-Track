@@ -13,8 +13,8 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
 
 ## How the owner thinks about each part (keep these in mind when adding features)
 
-- **Routines** are small, recurring chores the owner likes to do every week (e.g. check Ava results on weekdays,
-  3P tests at work, fish tank water change on Mondays). They are *not* part of a project. Keep Routines separate
+- **Recurring tasks** (called Routines in the code: `dailyCheck` data, `routine*` functions) are small, recurring chores the owner likes to do every week (e.g. check Ava results on weekdays,
+  3P tests at work, fish tank water change on Mondays). They are *not* part of a project. Keep them separate
   from Projects; don't fold them into project features.
 - **Tasks** are one-off things planned for a day. Adding a task should stay simple: name, date (defaults to the
   day being viewed) and optional time. Everything else lives under "More options".

@@ -337,10 +337,10 @@ function renderDailyCheck(key) {
             <button class="icon-btn sm danger" data-action="check-remove" data-id="${i.id}" aria-label="Remove">${icon('x')}</button>
           </li>`).join('')}
       </ul>
-      <button class="add-inline" data-action="check-add-item">+ Add a routine</button>
+      <button class="add-inline" data-action="check-add-item">+ Add a recurring task</button>
       <div class="check-foot"><button class="link small" data-action="check-edit">Done editing</button></div>`;
   } else if (!items.length) {
-    body = `<p class="empty small">Nothing on your routine ${key === D.todayKey() ? 'today' : 'this day'}.</p>`;
+    body = `<p class="empty small">Nothing recurring ${key === D.todayKey() ? 'today' : 'this day'}.</p>`;
   } else if (key > D.todayKey()) {
     // A future day: show the same items, ready to check off on the day.
     body = `<ul class="task-list compact">
@@ -374,13 +374,13 @@ function renderDailyCheck(key) {
       <div class="check-bar">
         <button class="check-toggle" data-action="check-open" aria-expanded="${open}">
           <span class="check-badge">${all ? icon('check') : `${doneCount}/${items.length}`}</span>
-          <span class="check-text"><b>Routines</b><small>${sub}</small></span>
+          <span class="check-text"><b>Recurring tasks</b><small>${sub}</small></span>
           ${items.length ? `<span class="check-prog"><i style="width:${items.length ? Math.round((doneCount / items.length) * 100) : 0}%"></i></span>` : ''}
           ${everything.length && !editing ? `<span class="caret ${open ? 'up' : ''}">${icon('chev-down')}</span>` : ''}
         </button>
       </div>
       ${open ? `<div class="check-body">${body}
-        ${everything.length && !editing ? `<div class="check-foot"><button class="edit-subtle" data-action="check-edit">${icon('edit')} Edit routines</button></div>` : ''}
+        ${everything.length && !editing ? `<div class="check-foot"><button class="edit-subtle" data-action="check-edit">${icon('edit')} Edit recurring tasks</button></div>` : ''}
       </div>` : ''}
     </section>`;
 }
@@ -523,7 +523,7 @@ function weekCheckLine(k) {
   const done = items.filter((i) => S.isChecked(i.id, k)).length;
   const all = done === items.length;
   return `<button class="wcheck ${all ? 'all' : ''} ${k > D.todayKey() ? 'future' : ''}" data-action="open-day" data-date="${k}">
-    ${icon('check')}<span>Routines</span><b>${done}/${items.length}</b></button>`;
+    ${icon('check')}<span>Recurring</span><b>${done}/${items.length}</b></button>`;
 }
 
 // ---------------------------------------------------------------- month
@@ -666,7 +666,7 @@ export const homeActions = {
   'check-edit': () => { ui.checkEdit = !ui.checkEdit; },
   'check-remove': (el) => {
     const item = S.getData().dailyCheck.items.find((i) => i.id === el.dataset.id);
-    if (item && confirm(`Remove "${item.title}" from your Routines?`)) S.removeCheckItem(item.id);
+    if (item && confirm(`Remove "${item.title}" from your recurring tasks?`)) S.removeCheckItem(item.id);
     return false;
   },
   'check-rename': (el) => { openDailySheet({ id: el.dataset.id }); return false; },

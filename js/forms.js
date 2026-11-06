@@ -50,7 +50,7 @@ function kindSwitch(kind) {
   return `<div class="seg kind-seg">
     <button type="button" class="seg-btn ${kind === 'task' ? 'on' : ''}" data-kind="task">Task</button>
     <button type="button" class="seg-btn ${kind === 'event' ? 'on' : ''}" data-kind="event">Event</button>
-    <button type="button" class="seg-btn ${kind === 'daily' ? 'on' : ''}" data-kind="daily">Routine</button>
+    <button type="button" class="seg-btn ${kind === 'daily' ? 'on' : ''}" data-kind="daily">Recurring</button>
   </div>`;
 }
 
@@ -405,7 +405,7 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
   }
   openSheet(`
     <form class="sheet-form" id="daily-form" autocomplete="off">
-      ${sheetTop(item ? 'Edit Routine' : 'New', { saveLabel: item ? 'Save' : 'Add' })}
+      ${sheetTop(item ? 'Edit Recurring Task' : 'New', { saveLabel: item ? 'Save' : 'Add' })}
       ${item ? '' : kindSwitch('daily')}
       <input class="title-input" name="title" placeholder="e.g. Check Ava results, Water change" value="${esc(item ? item.title : defaults.title || '')}" required>
       <div class="field-group">
@@ -437,7 +437,7 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
         </div>
       </div>
       <p class="hint days-hint"></p>
-      ${item ? `<button type="button" class="btn danger wide" data-act="delete">Delete from Routines</button>` : ''}
+      ${item ? `<button type="button" class="btn danger wide" data-act="delete">Delete recurring task</button>` : ''}
     </form>`);
   const form = $('#daily-form');
   if (!item) setTimeout(() => form.title.focus(), 50);
@@ -491,7 +491,7 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
   paint();
 
   form.querySelector('[data-act="delete"]')?.addEventListener('click', () => {
-    if (confirm(`Delete "${item.title}" from your Routines?`)) { S.removeCheckItem(item.id); closeSheet(); }
+    if (confirm(`Delete "${item.title}" from your recurring tasks?`)) { S.removeCheckItem(item.id); closeSheet(); }
   });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -500,7 +500,7 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
     if (!days.size) { toast('Pick at least one day'); return; }
     const start = every === 2 ? (startWeek === 'next' ? nextMon : thisMon) : null;
     if (item) S.updateCheckItem(item.id, { title, days: [...days], category, every, start });
-    else { S.addCheckItem(title, [...days], category, every, start); toast('Added to your Routines'); }
+    else { S.addCheckItem(title, [...days], category, every, start); toast('Added to Recurring tasks'); }
     closeSheet();
   });
 }

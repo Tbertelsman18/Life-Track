@@ -406,6 +406,14 @@ export function leadDays(id) {
   return (LEAD_TIMES.find((l) => l.id === id) || LEAD_TIMES[2]).days;
 }
 
+// Events starting after `key` that are inside their "tell me ahead" window,
+// nearest first. Shown in the Day page's "Coming up" box.
+export function upcomingEvents(key) {
+  return data.events
+    .filter((e) => e.date > key && D.daysBetween(key, e.date) <= leadDays(e.lead))
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+}
+
 // ---------- Forecast ----------
 // Upcoming things to know about, nearest first.
 export function forecast(today = D.todayKey()) {

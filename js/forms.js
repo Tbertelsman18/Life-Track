@@ -339,7 +339,7 @@ export function openEventSheet({ id = null, date = D.todayKey(), defaults = {}, 
   const leadHint = () => {
     const days = S.leadDays(lead);
     const from = form.date.value ? D.addDays(form.date.value, -days) : null;
-    form.querySelector('.lead-hint').textContent = from ? `Shows in your Forecast from ${D.formatShort(from)}.` : '';
+    form.querySelector('.lead-hint').textContent = from ? `Shows in "Coming up" on your Day page from ${D.formatShort(from)}.` : '';
   };
   form.querySelectorAll('[data-lead]').forEach((b) => b.addEventListener('click', () => {
     lead = b.dataset.lead;

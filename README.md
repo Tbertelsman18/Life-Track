@@ -23,6 +23,7 @@ All six stages are built:
 
 - **Routines** (was Daily Check): simple things you repeat each week, all year. Pick the days each one shows on and, optionally, a category (e.g. Work, Maintenance) to group them. Routines can repeat every week or every other week. A routine on one day (e.g. fish tank on Monday) stays on your list from that day until you check it off. Add one with **+ → Routine**; change it with **Edit routines**.
 - **Daily reflection** (replaces the End-of-day review): four short questions at the end of the day. Answers save as you type.
+- **Coming up** (Day page): events show here ahead of time, based on each event's **Tell me ahead** setting (1 day to 1 month).
 - **Info** (More → Info): things to keep handy, like codes and phone numbers.
 - **Backup:** **More → Back up to Files** (top of More). Every Sunday the Home screen shows a reminder banner until you back up that day.
 

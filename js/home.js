@@ -170,6 +170,29 @@ function renderDayTasks(key) {
   const list = (id, items, emptyText) => `<ul class="task-list sort-list" id="${id}" data-empty="${esc(emptyText)}">${
     items.map((t, i) => taskRow(t, key, { num: i + 1, drag: true })).join('')}</ul>`;
 
+  // Events coming up soon, based on each event's "tell me ahead" setting
+  const soon = S.upcomingEvents(key);
+  if (soon.length) {
+    out.push(`<section class="card">
+      <h2 class="card-title">${icon('bell')} Coming up</h2>
+      <ul class="task-list">${soon.map((e) => {
+        const last = S.eventLast(e);
+        const n = D.daysBetween(key, e.date);
+        const when = n === 1 ? 'Tomorrow' : n < 14 ? `In ${n} days` : `In ${Math.round(n / 7)} weeks`;
+        return `<li class="event-row" style="--c:${sectionColor(e.sectionId)}">
+          <button class="event-main" data-action="edit-event" data-id="${e.id}">
+            <span class="event-bar"></span>
+            <span class="task-main-inner">
+              <span class="task-title">${esc(e.title)}</span>
+              <span class="task-meta">${D.formatShort(e.date)}${last !== e.date ? ' – ' + D.formatShort(last) : ''}${e.time ? ' · ' + D.formatTime(e.time) : ''}</span>
+            </span>
+            <span class="fc-when ${n <= 1 ? 'soon' : ''}">${when}</span>
+          </button>
+        </li>`;
+      }).join('')}</ul>
+    </section>`);
+  }
+
   // The work box shows on weekdays, or any day it has something in it.
   if (weekday || work.length) {
     out.push(`<section class="card work-card">

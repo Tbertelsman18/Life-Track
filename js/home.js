@@ -194,18 +194,20 @@ function renderDayTasks(key) {
   }
 
   // The work box shows on weekdays, or any day it has something in it.
-  if (weekday || work.length) {
-    out.push(`<section class="card work-card">
+  // While it's empty it sits below Today's Tasks; once it has tasks it moves to the top.
+  const workCard = (weekday || work.length) ? `<section class="card work-card">
       <h2 class="card-title">${icon('briefcase')} At work ${work.length ? `<span class="count">${work.length}</span>` : ''}</h2>
       ${list('work-sort', work, 'Drag a task here to do it at work')}
-    </section>`);
-  }
+    </section>` : '';
 
-  out.push(`<section class="card">
+  const tasksCard = `<section class="card">
     <h2 class="card-title">${isToday ? "Today's Tasks" : 'Tasks'} ${rest.length ? `<span class="count">${rest.length}</span>` : ''}</h2>
     ${list('day-sort', rest, open.length ? 'Nothing else today' : done.length ? 'All done. Nice work.' : 'Nothing planned. Tap + to add a task.')}
     ${open.length > 1 ? `<p class="hint left">Drag ${icon('drag')} to change the order.</p>` : ''}
-  </section>`);
+  </section>`;
+
+  if (work.length) out.push(workCard, tasksCard);
+  else out.push(tasksCard, workCard);
 
   if (done.length) {
     out.push(`<section class="card">

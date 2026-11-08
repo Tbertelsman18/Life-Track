@@ -42,7 +42,7 @@ export function renderProjects() {
     <div class="view-body">
       <div class="seg">${tabs}</div>
       ${ui.projectsTab !== 'done' ? `<p class="hint">${ui.projectsTab === 'active'
-        ? 'Drag ☰ to change priority. #1 is your top project.'
+        ? 'Press and hold ☰, then drag to change priority. #1 is your top project.'
         : 'Next in line is at the top. Drag ☰ to reorder.'}</p>` : ''}
       ${body}
       ${ui.projectsTab !== 'done' ? `<button class="btn wide" data-action="new-project">${icon('plus')} New ${ui.projectsTab === 'radar' ? 'Radar' : ''} project</button>` : ''}

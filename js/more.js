@@ -5,9 +5,20 @@ import * as S from './store.js';
 import { ui, esc, icon, go, pct, progressBar, sectionColor, pageHeader, toast } from './ui.js';
 import { openSectionSheet, openTaskSheet, openIdeaSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
+import { paintScene } from './scene.js';
+import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.27 (Nov 8)';
+export const APP_VERSION = '1.28 (Nov 8)';
+
+// The line under "Kansas basketball games" in Settings
+function kuStatus(st) {
+  if (!st.kuGames) return 'Adds every Jayhawks game to your calendar';
+  if (st.kuError && !st.kuSyncedAt) return st.kuError;
+  if (!st.kuSyncedAt) return 'Loading the schedule…';
+  const n = st.kuCount ? `${st.kuCount} games · ` : '';
+  return `${n}updated ${D.formatShort(D.keyOfISO(st.kuSyncedAt))}${st.kuError ? ' (last try failed)' : ''}`;
+}
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {
@@ -67,6 +78,10 @@ export function renderMore() {
       <ul class="group">
         <li><button class="row" data-action="edit-daily-check">${icon('check')}<span class="row-label">Recurring tasks</span>
           <span class="row-value">${data.dailyCheck.items.length}</span>${icon('chev-right')}</button></li>
+        <li><label class="row">${icon('sun')}<span class="row-label">Beach background</span>
+          <input type="checkbox" class="switch" data-action="toggle-beach" ${data.settings.beach !== false ? 'checked' : ''}></label></li>
+        <li><label class="row">🏀<span class="row-label">Kansas basketball games<small class="row-sub">${esc(kuStatus(data.settings))}</small></span>
+          <input type="checkbox" class="switch" data-action="toggle-ku" ${data.settings.kuGames ? 'checked' : ''}></label></li>
       </ul>
 
       <p class="hint center">Life Tracker · version ${APP_VERSION}<br>${data.tasks.length} tasks · ${data.events.length} events · ${data.projects.length} projects</p>
@@ -419,6 +434,21 @@ export const moreActions = {
   'history-by': (el) => { ui.historyBy = el.dataset.by; },
   'edit-section': (el) => { openSectionSheet(el.dataset.id); return false; },
   'add-section': () => { openSectionSheet(null); return false; },
+  'toggle-beach': () => { S.setSetting('beach', S.getData().settings.beach === false); paintScene(); return false; },
+  'toggle-ku': () => {
+    if (S.getData().settings.kuGames) {
+      S.setSettings({ kuGames: false, kuSyncedAt: null, kuError: null, kuCount: null });
+      S.removeExternalEvents('ku');
+      toast('Kansas games removed');
+    } else {
+      S.setSettings({ kuGames: true, kuSyncedAt: null, kuError: null });
+      syncKU({ force: true }).then(() => {
+        const st = S.getData().settings;
+        toast(st.kuSyncedAt ? `Added ${st.kuCount} Kansas games` : (st.kuError || 'Could not load games'));
+      });
+    }
+    return false;
+  },
   'set-default-view': (el) => { S.setSetting('defaultView', el.dataset.view); return false; },
   'edit-daily-check': () => { ui.tab = 'home'; ui.page = null; ui.view = 'day'; ui.date = D.todayKey(); ui.checkEdit = true; },
   export: () => { doExport(); return false; },

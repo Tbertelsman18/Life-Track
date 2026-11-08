@@ -856,3 +856,71 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .od-btns .chip { padding: 6px 11px; font-size: 13.5px; white-space: nowrap; }
 .od-btns .chip.danger { margin-left: auto; padding: 6px 10px; }
 .event-bar.task-bar { border-radius: 2px; opacity: 0.55; }
+
+/* ================================================================ beach background
+   An illustrated beach (js/scene.js) sits behind everything. The sky changes
+   with the time of day; cards are frosted glass so the scene shows through. */
+#scene { display: none; }
+body.beach #scene {
+  display: block; position: fixed; inset: 0 0 auto 0; z-index: -1; pointer-events: none;
+}
+body.beach #scene svg { width: 100%; height: auto; display: block; }
+body.beach { --bg: #f4e9d8; --accent: #0e7f72; --accent-2: #14998a; --accent-soft: rgba(14, 127, 114, 0.11); --sel-bg: rgba(14, 127, 114, 0.12); }
+html.beach { background: #f4e9d8; }
+body.beach { background: transparent; }
+
+/* Frosted-glass cards */
+body.beach .card, body.beach .summary, body.beach .group, body.beach .week-day, body.beach .m-cell {
+  background-color: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow: 0 1px 2px rgba(20, 30, 40, 0.06), 0 8px 24px rgba(20, 30, 40, 0.10);
+}
+body.beach .summary { background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 70%); }
+body.beach .banner { background: rgba(255, 255, 255, 0.78); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+
+/* Text that sits right on the sky: white with a soft shadow so it reads on any sky */
+body.beach .home-header .eyebrow, body.beach .home-header .display, body.beach .home-header .caret,
+body.beach .home-header .icon-btn, body.beach .page-header h1, body.beach .sub-title,
+body.beach .sub-header .back-btn, body.beach .sub-header .link, body.beach .group-label.first {
+  color: #fff; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+}
+body.beach .home-header .icon-btn .ic, body.beach .sub-header .back-btn .ic { filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.35)); }
+body.beach .today-pill { background: rgba(255, 255, 255, 0.9); color: var(--accent); }
+
+/* Glass segmented controls over the sky (Day/Week/Month, week modes, project tabs) */
+body.beach .home-header .seg, body.beach .view-body > .seg {
+  background: rgba(10, 20, 35, 0.22); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
+}
+body.beach .home-header .seg .seg-btn, body.beach .view-body > .seg .seg-btn { color: rgba(255, 255, 255, 0.95); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3); }
+body.beach .home-header .seg .seg-btn.on, body.beach .view-body > .seg .seg-btn.on { background: #fff; color: var(--text); text-shadow: none; }
+
+body.beach .tabbar { background: rgba(255, 255, 255, 0.8); }
+body.beach .fab { background: var(--accent); }
+
+@media (prefers-color-scheme: dark) {
+  html.beach { background: #15130f; }
+  body.beach { --bg: #15130f; --accent: #4fd1bf; --accent-2: #6fdccc; --accent-soft: rgba(79, 209, 191, 0.14); --accent-ink: #082420; }
+  body.beach #scene { filter: brightness(0.62) saturate(0.95); }
+  body.beach .card, body.beach .summary, body.beach .group, body.beach .week-day, body.beach .m-cell { background-color: rgba(24, 27, 26, 0.84); }
+  body.beach .summary { background-image: none; }
+  body.beach .banner { background: rgba(24, 27, 26, 0.8); }
+  body.beach .tabbar { background: rgba(20, 22, 21, 0.82); }
+  body.beach .home-header .seg .seg-btn.on, body.beach .view-body > .seg .seg-btn.on { background: rgba(30, 34, 32, 0.95); color: var(--text); }
+}
+
+/* A clear window on Home so the beach shows between the header and the first card */
+body.beach .home-header { margin-bottom: 118px; }
+
+/* Loose text that sits right on the beach gets a small frosted backing */
+body.beach .view-body > .hint, body.beach .view-body > p.empty, body.beach .view-body > .group-label:not(.first) {
+  align-self: flex-start; max-width: 100%;
+  background: rgba(255, 255, 255, 0.8); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  padding: 6px 11px; border-radius: 10px; color: var(--text-2);
+}
+body.beach .view-body > .hint.center { align-self: center; }
+body.beach .view-body > p.empty.big { align-self: stretch; padding: 18px; }
+@media (prefers-color-scheme: dark) {
+  body.beach .view-body > .hint, body.beach .view-body > p.empty, body.beach .view-body > .group-label:not(.first) { background: rgba(24, 27, 26, 0.82); }
+}
+.row-sub { display: block; font-size: 13px; color: var(--muted); margin-top: 1px; }
+label.row { cursor: pointer; }

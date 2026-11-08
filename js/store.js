@@ -167,6 +167,33 @@ export function setSetting(key, value) {
   save();
 }
 
+export function setSettings(changes) {
+  Object.assign(data.settings, changes);
+  save();
+}
+
+// Events that come from outside the app (e.g. Kansas games, source 'ku').
+// Adds new ones and updates changed ones (keeping your own "tell me ahead"
+// and Important choices), and removes upcoming ones no longer on the list.
+export function syncExternalEvents(source, items) {
+  const today = D.todayKey();
+  const seen = new Set();
+  for (const it of items) {
+    seen.add(it.extId);
+    const ev = data.events.find((e) => e.source === source && e.extId === it.extId);
+    if (ev) Object.assign(ev, { title: it.title, date: it.date, time: it.time, notes: it.notes });
+    else data.events.push({ id: uid(), source, extId: it.extId, title: it.title, date: it.date, endDate: null,
+      time: it.time, sectionId: null, lead: '1d', important: true, notes: it.notes, createdAt: nowISO() });
+  }
+  data.events = data.events.filter((e) => e.source !== source || seen.has(e.extId) || e.date < today);
+  save();
+}
+
+export function removeExternalEvents(source) {
+  data.events = data.events.filter((e) => e.source !== source);
+  save();
+}
+
 export function dismiss(key) {
   data.dismissed[key] = nowISO();
   save();

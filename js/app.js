@@ -9,6 +9,8 @@ import { renderHome, afterHome, homeActions, homeForms } from './home.js';
 import { renderProjects, renderProjectPage, afterProjects, projectActions, projectForms } from './projects.js';
 import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, goalActions, goalForms, afterGoals } from './goals.js';
 import { renderLists, renderListPage, renderInfoPage, afterLists, listActions, listForms } from './lists.js';
+import { startScene, paintScene } from './scene.js';
+import { startKU } from './ku.js';
 import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeating, renderIdeas, moreActions } from './more.js';
 
 const actions = {
@@ -143,6 +145,8 @@ setInterval(checkNewDay, 60 * 1000);
 
 // ---------------------------------------------------------------- start
 render();
+startScene();
+startKU();
 
 // Ask the device to keep our data (not clear it when storage runs low).
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});

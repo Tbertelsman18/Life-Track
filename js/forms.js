@@ -338,7 +338,7 @@ export function openEventSheet({ id = null, date = D.todayKey(), defaults = {}, 
     sectionId: data.sections[0]?.id || null, ...defaults,
   };
   const multi = Boolean(v.endDate && v.endDate > v.date);
-  const leads = S.LEAD_TIMES.map((l) => `
+  const leads = `<button type="button" class="chip ${!v.lead ? 'on' : ''}" data-lead="">Off</button>` + S.LEAD_TIMES.map((l) => `
     <button type="button" class="chip ${v.lead === l.id ? 'on' : ''}" data-lead="${l.id}">${l.label}</button>`).join('');
 
   openSheet(`
@@ -393,14 +393,13 @@ export function openEventSheet({ id = null, date = D.todayKey(), defaults = {}, 
   if (allowSwitch && !ev) wireKindSwitch(form, 'event', { date, defaults });
   wireSectionSelect(form.sectionId, v.sectionId);
 
-  let lead = v.lead;
+  let lead = v.lead || null;
   const leadHint = () => {
-    const days = S.leadDays(lead);
-    const from = form.date.value ? D.addDays(form.date.value, -days) : null;
+    const from = lead && form.date.value ? D.addDays(form.date.value, -S.leadDays(lead)) : null;
     form.querySelector('.lead-hint').textContent = from ? `Shows in "Coming up" on your Day page from ${D.formatShort(from)}.` : '';
   };
   form.querySelectorAll('[data-lead]').forEach((b) => b.addEventListener('click', () => {
-    lead = b.dataset.lead;
+    lead = b.dataset.lead || null;
     form.querySelectorAll('[data-lead]').forEach((x) => x.classList.toggle('on', x === b));
     leadHint();
   }));

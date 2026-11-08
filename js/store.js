@@ -86,6 +86,11 @@ function defaultData() {
 
 let data = load();
 orderSteps();
+// Kansas games: not Important and no early heads-up (they show on game day only).
+if (!data.settings.kuQuiet) {
+  for (const e of data.events) if (e.source === 'ku') { e.important = false; e.lead = null; }
+  data.settings.kuQuiet = true;
+}
 // Routines made before "stay until done" existed start counting from today.
 for (const i of data.dailyCheck.items) if (!i.since) i.since = D.todayKey();
 // Recurring tasks now use the same Sections as tasks (Personal, Work, ...).
@@ -183,7 +188,7 @@ export function syncExternalEvents(source, items) {
     const ev = data.events.find((e) => e.source === source && e.extId === it.extId);
     if (ev) Object.assign(ev, { title: it.title, date: it.date, time: it.time, notes: it.notes });
     else data.events.push({ id: uid(), source, extId: it.extId, title: it.title, date: it.date, endDate: null,
-      time: it.time, sectionId: null, lead: '1d', important: true, notes: it.notes, createdAt: nowISO() });
+      time: it.time, sectionId: null, lead: null, important: false, notes: it.notes, createdAt: nowISO() });
   }
   data.events = data.events.filter((e) => e.source !== source || seen.has(e.extId) || e.date < today);
   save();
@@ -504,7 +509,7 @@ export function leadDays(id) {
 // nearest first. Shown in the Day page's "Coming up" box.
 export function upcomingEvents(key) {
   return data.events
-    .filter((e) => e.date > key && D.daysBetween(key, e.date) <= leadDays(e.lead))
+    .filter((e) => e.lead && e.date > key && D.daysBetween(key, e.date) <= leadDays(e.lead))
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
 }
 

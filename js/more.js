@@ -7,7 +7,7 @@ import { openSectionSheet, openTaskSheet, openIdeaSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.26 (Nov 7)';
+export const APP_VERSION = '1.27 (Nov 8)';
 
 // ---------------------------------------------------------------- menu
 export function renderMore() {

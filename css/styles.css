@@ -855,3 +855,4 @@ textarea.title-input { resize: none; overflow: hidden; line-height: 1.35; displa
 .od-btns { flex-wrap: nowrap; padding-left: 0; gap: 6px; }
 .od-btns .chip { padding: 6px 11px; font-size: 13.5px; white-space: nowrap; }
 .od-btns .chip.danger { margin-left: auto; padding: 6px 10px; }
+.event-bar.task-bar { border-radius: 2px; opacity: 0.55; }

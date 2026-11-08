@@ -194,26 +194,46 @@ function renderDayTasks(key) {
   const list = (id, items, emptyText) => `<ul class="task-list sort-list" id="${id}" data-empty="${esc(emptyText)}">${
     items.map((t, i) => taskRow(t, key, { num: i + 1, drag: true })).join('')}</ul>`;
 
-  // Events coming up soon, based on each event's "tell me ahead" setting
+  // Events and tasks coming up soon, based on their "tell me ahead" setting
   const soon = S.upcomingEvents(key);
-  if (soon.length) {
-    out.push(`<section class="card">
-      <h2 class="card-title">${icon('bell')} Coming up</h2>
-      <ul class="task-list">${soon.map((e) => {
+  const soonTasks = S.upcomingTasks(key);
+  const whenText = (date) => {
+    const n = D.daysBetween(key, date);
+    return [n <= 1, n === 1 ? 'Tomorrow' : n < 14 ? `In ${n} days` : `In ${Math.round(n / 7)} weeks`];
+  };
+  if (soon.length || soonTasks.length) {
+    const taskRows = soonTasks.map((t) => {
+      const [hot, when] = whenText(t.date);
+      return { date: t.date, time: t.time, html: `<li class="event-row" style="--c:${sectionColor(t.sectionId)}">
+          <button class="event-main" data-action="edit" data-id="${t.id}" data-date="">
+            <span class="event-bar task-bar"></span>
+            <span class="task-main-inner">
+              <span class="task-title">${esc(t.title)}</span>
+              <span class="task-meta">${icon('check')} Task · ${D.formatShort(t.date)}${t.time ? ' · ' + D.formatTime(t.time) : ''}</span>
+            </span>
+            <span class="fc-when ${hot ? 'soon' : ''}">${when}</span>
+          </button>
+        </li>` };
+    });
+    const eventRows = soon.map((e) => {
         const last = S.eventLast(e);
         const n = D.daysBetween(key, e.date);
         const when = n === 1 ? 'Tomorrow' : n < 14 ? `In ${n} days` : `In ${Math.round(n / 7)} weeks`;
-        return `<li class="event-row" style="--c:${sectionColor(e.sectionId)}">
+        return { date: e.date, time: e.time, html: `<li class="event-row" style="--c:${sectionColor(e.sectionId)}">
           <button class="event-main" data-action="edit-event" data-id="${e.id}">
             <span class="event-bar"></span>
             <span class="task-main-inner">
               <span class="task-title">${esc(e.title)}</span>
-              <span class="task-meta">${D.formatShort(e.date)}${last !== e.date ? ' – ' + D.formatShort(last) : ''}${e.time ? ' · ' + D.formatTime(e.time) : ''}</span>
+              <span class="task-meta">${icon('calendar')} ${D.formatShort(e.date)}${last !== e.date ? ' – ' + D.formatShort(last) : ''}${e.time ? ' · ' + D.formatTime(e.time) : ''}</span>
             </span>
             <span class="fc-when ${n <= 1 ? 'soon' : ''}">${when}</span>
           </button>
-        </li>`;
-      }).join('')}</ul>
+        </li>` };
+    });
+    const rows = [...eventRows, ...taskRows].sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+    out.push(`<section class="card">
+      <h2 class="card-title">${icon('bell')} Coming up</h2>
+      <ul class="task-list">${rows.map((r) => r.html).join('')}</ul>
     </section>`);
   }
 

@@ -481,6 +481,15 @@ export function upcomingEvents(key) {
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
 }
 
+// One-time tasks with a "tell me ahead" setting (task.lead) that are inside
+// that window: they show in "Coming up" too, until they're done.
+export function upcomingTasks(key) {
+  return data.tasks
+    .filter((t) => t.lead && !t.repeat && !t.done && !t.missed && t.date && t.date > key
+      && D.daysBetween(key, t.date) <= leadDays(t.lead))
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+}
+
 // ---------- Forecast ----------
 // Upcoming things to know about, nearest first.
 export function forecast(today = D.todayKey()) {

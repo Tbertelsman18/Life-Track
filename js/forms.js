@@ -140,7 +140,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       </div>
 
       <button type="button" class="more-toggle" data-act="more" aria-expanded="false">
-        More options <small>repeat, project${notesUp ? '' : ', notes'}</small> ${icon('chev-down')}
+        More options <small>tell me ahead, repeat, project${notesUp ? '' : ', notes'}</small> ${icon('chev-down')}
       </button>
 
       <div class="more-opts" hidden>
@@ -165,6 +165,17 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
           <span>Ends (optional)</span>
           <input type="date" name="until" value="${v.repeat?.until || ''}">
         </label>
+      </div>
+
+      <div class="field-group">
+        <div class="field col">
+          <span>Tell me ahead <small class="opt">shows in "Coming up"</small></span>
+          <div class="lead-chips task-lead">
+            <button type="button" class="chip ${!v.lead ? 'on' : ''}" data-tlead="">Off</button>
+            ${S.LEAD_TIMES.map((l) => `<button type="button" class="chip ${v.lead === l.id ? 'on' : ''}" data-tlead="${l.id}">${l.label}</button>`).join('')}
+          </div>
+          <span class="hint left tlead-hint"></span>
+        </div>
       </div>
 
       ${importantToggle(v.important)}
@@ -205,6 +216,25 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   form.title.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); }
   });
+
+  // "Tell me ahead" for one-time tasks with a date
+  let tlead = v.lead || null;
+  const tleadHint = () => {
+    const box = form.querySelector('.tlead-hint');
+    const d = form.date.value;
+    if (!tlead) { box.textContent = ''; return; }
+    if (repeatDays.size) { box.textContent = 'Only for one-time tasks (not repeating ones).'; return; }
+    if (!d) { box.textContent = 'Give the task a date first.'; return; }
+    const from = D.addDays(d, -S.leadDays(tlead));
+    box.textContent = `Shows in "Coming up" on your Day page from ${D.formatShort(from)}.`;
+  };
+  form.querySelectorAll('[data-tlead]').forEach((b) => b.addEventListener('click', () => {
+    tlead = b.dataset.tlead || null;
+    form.querySelectorAll('[data-tlead]').forEach((x) => x.classList.toggle('on', x === b));
+    tleadHint();
+  }));
+  form.date.addEventListener('change', tleadHint);
+  tleadHint();
 
   const more = form.querySelector('[data-act="more"]');
   more.addEventListener('click', () => {
@@ -264,6 +294,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       goalId: form.goalId ? (form.goalId.value || null) : (v.goalId || null),
       atWork: Boolean(v.atWork),
       important: form.important.checked,
+      lead: repeatDays.size ? null : tlead,
       repeat,
     };
     if (t) S.updateTask(t.id, fields);

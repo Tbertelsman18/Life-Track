@@ -23,7 +23,7 @@ All six stages are built:
 
 - **Recurring tasks** (was Routines, before that Daily Check): simple things you repeat each week, all year. Pick the days each one shows on and, optionally, a **Section** (the same list your tasks use: Personal, Work, Chores...) to group them. Routines can repeat every week or every other week. A routine on one day (e.g. fish tank on Monday) stays on your list from that day until you check it off. Add one with **+ → Recurring**; change it with **Edit recurring tasks**.
 - **Daily reflection** (replaces the End-of-day review): four short questions at the end of the day. Answers save as you type.
-- **Coming up** (Day page): events show here ahead of time, based on each event's **Tell me ahead** setting (1 day to 1 month).
+- **Coming up** (Day page): events, and tasks with a date, show here ahead of time based on their **Tell me ahead** setting (1 day to 1 month). For tasks it's under More options.
 - **Not finished:** tasks left undone on earlier days show at the top of today with **Move to today**, **Not completed** (kept for tracking in More → Pushed off & not completed) or delete.
 - **Ideas** (More → Ideas, or **+ → Idea**): quick thoughts, separate from tasks.
 - **Info** (More → Info): things to keep handy, like codes and phone numbers.

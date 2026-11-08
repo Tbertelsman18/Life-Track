@@ -92,7 +92,7 @@ function wireSectionChips(box, selected, onPick) {
   paint();
 }
 
-export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwitch = false } = {}) {
+export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwitch = false, showMore = false } = {}) {
   const t = id ? S.getTask(id) : null;
   const data = S.getData();
   const v = t ? { ...t } : {
@@ -276,6 +276,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
     more.setAttribute('aria-expanded', String(!box.hidden));
     more.classList.toggle('open', !box.hidden);
   });
+  if (showMore) more.click(); // e.g. "Add a repeating task" opens with Repeat on showing
 
   const warn = form.querySelector('.block-warn');
   const updateWarn = () => {

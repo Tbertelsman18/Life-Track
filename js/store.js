@@ -813,9 +813,9 @@ export function daysInProgress(p) {
 }
 
 
-// Tasks inside one milestone (one-time tasks only)
+// Tasks inside one milestone (one-time and repeating; repeating ones sort last)
 export function milestoneTasks(projectId, milestoneId) {
-  return projectTasks(projectId).filter((t) => !t.repeat && (t.milestoneId || null) === (milestoneId || null));
+  return projectTasks(projectId).filter((t) => (t.milestoneId || null) === (milestoneId || null));
 }
 
 function touchProject(id) {

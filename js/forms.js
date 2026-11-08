@@ -126,7 +126,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
 
       <textarea class="title-input grow" name="title" rows="1" enterkeyhint="done" placeholder="What do you need to do?" required>${esc(v.title)}</textarea>
       ${notesUp ? notesBox : ''}
-      ${importantToggle(v.important)}
+      ${v.projectId ? '' : importantToggle(v.important)}
 
       <div class="field-group">
         ${projTask ? `<label class="field toggle-field">
@@ -327,7 +327,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       milestoneId: form.projectId.value ? (form.milestoneId.value || null) : null,
       goalId: form.goalId ? (form.goalId.value || null) : (v.goalId || null),
       atWork: Boolean(v.atWork),
-      important: form.important.checked,
+      important: form.important ? form.important.checked : Boolean(v.important), // project tasks have no Important switch
       lead: repeatDays.size ? null : tlead,
       repeat,
     };

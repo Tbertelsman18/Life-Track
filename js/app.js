@@ -11,7 +11,7 @@ import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, 
 import { renderLists, renderListPage, renderInfoPage, afterLists, listActions, listForms } from './lists.js';
 import { startScene, paintScene } from './scene.js';
 import { startKU } from './ku.js';
-import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeating, renderIdeas, moreActions, moreForms } from './more.js';
+import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeating, moreActions, moreForms } from './more.js';
 
 const actions = {
   ...homeActions, ...projectActions, ...goalActions, ...listActions, ...moreActions,
@@ -38,7 +38,6 @@ function renderPage(p) {
     case 'quarter-plan': return renderQuarterPlan(p.year, p.q);
     case 'list': return renderListPage(p.id);
     case 'info': return renderInfoPage();
-    case 'ideas': return renderIdeas();
     case 'planning': return renderPlanning();
     case 'history': return renderHistory();
     case 'pushed': return renderPushed();
@@ -55,7 +54,6 @@ function render() {
   else if (ui.tab === 'projects') main.innerHTML = renderProjects();
   else if (ui.tab === 'goals') main.innerHTML = renderGoals();
   else if (ui.tab === 'lists') main.innerHTML = renderLists();
-  else if (ui.tab === 'ideas') main.innerHTML = renderIdeas();
   else main.innerHTML = renderMore();
   window.scrollTo(0, y);
   // The + button (Task / Event / Recurring) is only for the Planner tab.

@@ -958,3 +958,7 @@ label.row { cursor: pointer; }
 @keyframes flicker { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(0.94, 1.07); } 60% { transform: scale(1.05, 0.95); } }
 @keyframes spark { 0% { transform: translateY(14px); opacity: 0; } 25% { opacity: 0.9; } 100% { transform: translateY(-16px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { #scene .fl, #scene .spark { animation: none; } #scene .spark { opacity: 0.6; } }
+
+/* Projects: four segments (Active, Radar, Ideas, Done) fit on one line */
+.proj-seg .seg-btn { padding-left: 4px; padding-right: 4px; font-size: 15px; white-space: nowrap; }
+.proj-seg .seg-count { margin-left: 2px; }

@@ -9,7 +9,7 @@ import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.37 (Nov 7)';
+export const APP_VERSION = '1.38 (Nov 7)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {
@@ -367,12 +367,11 @@ export function renderPushed() {
     </div>`;
 }
 
-// The Ideas tab: a quick bar to jot an idea down, then all your ideas, newest first.
+// Ideas (shown under Projects → Ideas): a quick bar to jot an idea down,
+// then all your ideas, newest first.
 export function renderIdeas() {
   const ideas = S.getData().ideas;
   return `
-    <header class="page-header"><h1>Ideas</h1></header>
-    <div class="view-body">
       <form class="card idea-bar" data-form="idea-add">
         <textarea name="text" rows="1" placeholder="Jot down an idea…" enterkeyhint="done"></textarea>
         <button class="btn primary" type="submit">Save</button>
@@ -382,8 +381,7 @@ export function renderIdeas() {
           <span class="info-body">${esc(i.text)}</span>
           <span class="task-meta">${esc(D.formatShort(D.keyOfISO(i.createdAt)))}</span>
         </button></li>`).join('')}</ul>`
-      : '<p class="empty">Ideas that pop into your head. Type one in the bar above and tap Save. They stay here, separate from your tasks.</p>'}
-    </div>`;
+      : '<p class="empty">Ideas that pop into your head. Type one in the bar above and tap Save. They stay here, separate from your tasks.</p>'}`;
 }
 
 // ---------------------------------------------------------------- backup
@@ -443,7 +441,7 @@ export const moreForms = {
 
 export const moreActions = {
   'open-planning': () => { ui.tab = 'more'; go({ type: 'planning' }); return false; },
-  'open-ideas': () => { ui.tab = 'ideas'; ui.page = null; return true; },
+  'open-ideas': () => { ui.tab = 'projects'; ui.projectsTab = 'ideas'; ui.page = null; return true; },
   'new-idea': () => { openIdeaSheet(); return false; },
   'edit-idea': (el) => { openIdeaSheet({ id: el.dataset.id }); return false; },
   'missed-undo': (el) => { S.unmarkMissed(el.dataset.id); toast('Moved to today'); return false; },

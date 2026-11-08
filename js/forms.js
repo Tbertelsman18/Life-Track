@@ -559,7 +559,7 @@ export function openIdeaSheet({ id = null, defaults = {} } = {}) {
       ${sheetTop(idea ? 'Edit Idea' : 'New', { saveLabel: 'Save' })}
       ${idea ? '' : kindSwitch('idea')}
       <textarea class="title-input grow idea-input" name="title" rows="3" placeholder="What's the idea?" required>${esc(idea ? idea.text : defaults.title || '')}</textarea>
-      <p class="hint">Ideas are kept in the <b>Ideas</b> tab, separate from your tasks.</p>
+      <p class="hint">Ideas are kept in <b>Projects → Ideas</b>, separate from your tasks.</p>
       ${idea ? `<button type="button" class="btn danger wide" data-act="delete">Delete idea</button>` : ''}
     </form>`);
   const form = $('#idea-form');

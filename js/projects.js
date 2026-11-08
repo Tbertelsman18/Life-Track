@@ -6,6 +6,7 @@ import { ui, esc, icon, go, back, progressBar, sectionColor, sectionOptions, wir
   pageHeader, makeSortable, toast } from './ui.js';
 import { openFieldsSheet, openTaskSheet } from './forms.js';
 import { taskRow } from './home.js';
+import { renderIdeas } from './more.js';
 
 function ago(iso) {
   if (!iso) return 'never';
@@ -27,9 +28,19 @@ const statusClass = (s) => ({ 'Not started': 'st-new', 'In progress': 'st-prog',
 
 // ---------------------------------------------------------------- list
 export function renderProjects() {
-  const tabs = [['active', 'Active'], ['radar', 'Radar'], ['done', 'Done']].map(([id, label]) => `
+  const count = (id) => (id === 'ideas' ? S.getData().ideas.length : S.projectsIn(id).length);
+  const tabs = [['active', 'Active'], ['radar', 'Radar'], ['ideas', 'Ideas'], ['done', 'Done']].map(([id, label]) => `
     <button class="seg-btn ${ui.projectsTab === id ? 'on' : ''}" data-action="projects-tab" data-tab-id="${id}">
-      ${label} <span class="seg-count">${S.projectsIn(id).length || ''}</span></button>`).join('');
+      ${label} <span class="seg-count">${count(id) || ''}</span></button>`).join('');
+
+  if (ui.projectsTab === 'ideas') {
+    return `
+    <header class="page-header"><h1>Projects</h1></header>
+    <div class="view-body">
+      <div class="seg proj-seg">${tabs}</div>
+      ${renderIdeas()}
+    </div>`;
+  }
 
   const list = S.projectsIn(ui.projectsTab);
   let body;
@@ -46,7 +57,7 @@ export function renderProjects() {
   return `
     <header class="page-header"><h1>Projects</h1></header>
     <div class="view-body">
-      <div class="seg">${tabs}</div>
+      <div class="seg proj-seg">${tabs}</div>
       ${ui.projectsTab !== 'done' ? `<p class="hint">${ui.projectsTab === 'active'
         ? 'Press and hold ☰, then drag to change priority. #1 is your top project.'
         : 'Next in line is at the top. Drag ☰ to reorder.'}</p>` : ''}

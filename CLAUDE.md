@@ -20,9 +20,9 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   day being viewed), optional time, Section (chips) and the Important switch (right under the name). Everything else lives under "More options".
 - Unfinished one-time tasks from earlier days get a "Not finished" box on today: Move to today, Not completed
   (task leaves the lists but is tracked: `missed` flag, shown in Settings → Pushed off & not completed) or Delete.
-- **Ideas** have their own tab (quick-add bar at the top), kept separate from tasks. The + button is only for
+- **Ideas** live in Projects as a fourth segment (Active · Radar · Ideas · Done; quick-add bar at the top), kept separate from tasks. The + button is only for
   Task / Event / Recurring, and it only shows on the Planner tab.
-- Bottom tabs: **Planner** (was Home) · **Projects** · **Ideas** · **Settings** (was More; still holds backup,
+- Bottom tabs: **Planner** (was Home) · **Projects** · **Settings** (was More; still holds backup,
   planning, history, sections, info, etc.). Internally the tabs are still 'home' and 'more'.
 - **Projects**: cards show days in progress (`startedAt`, set when status first becomes In progress; older
   projects fall back to `createdAt`). Project tasks are planned inside the project itself. Tying projects into the daily task list is a

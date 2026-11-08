@@ -118,6 +118,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
 
       <textarea class="title-input grow" name="title" rows="1" enterkeyhint="done" placeholder="What do you need to do?" required>${esc(v.title)}</textarea>
       ${notesUp ? notesBox : ''}
+      ${importantToggle(v.important)}
 
       <div class="field-group">
         <label class="field">
@@ -177,8 +178,6 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
           <span class="hint left tlead-hint"></span>
         </div>
       </div>
-
-      ${importantToggle(v.important)}
 
       ${notesUp ? '' : notesBox}
       </div>

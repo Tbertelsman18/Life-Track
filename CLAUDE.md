@@ -17,7 +17,7 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   3P tests at work, fish tank water change on Mondays). They use the same **Sections** as tasks (so a later weekly score per section can cover both). They are *not* part of a project. Keep them separate
   from Projects; don't fold them into project features.
 - **Tasks** are one-off things planned for a day. Adding a task should stay simple: name, date (defaults to the
-  day being viewed), optional time and Section (chips). Everything else lives under "More options".
+  day being viewed), optional time, Section (chips) and the Important switch (right under the name). Everything else lives under "More options".
 - Unfinished one-time tasks from earlier days get a "Not finished" box on today: Move to today, Not completed
   (task leaves the lists but is tracked: `missed` flag, shown in More → Pushed off & not completed) or Delete.
 - **Ideas** (More → Ideas, or + → Idea) are quick thoughts kept separate from tasks.

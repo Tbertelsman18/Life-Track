@@ -134,14 +134,14 @@ export function renderProjectPage(id) {
           <button class="link strong" type="submit">Add</button>
         </form>
         <button class="add-inline" data-action="project-task-full" data-id="${p.id}">${icon('repeat')} Add a repeating task or set a time…</button>
-        <p class="hint left">Each task can have its own steps. When all its steps are checked, the task is done. Tap a task's name to change its day or time.</p>
+        <p class="hint left">Tasks stay here in the project unless you give them a date. Each task can have its own steps; when all its steps are checked, the task is done.</p>
       </section>
 
       <section class="card">
-        <h2 class="card-title">Mini goals</h2>
+        <h2 class="card-title">Milestones</h2>
         ${minis.length ? `<ul class="task-list">${minis.map((m) => miniRow(m, 'project', p.id)).join('')}</ul>` : ''}
         <form class="inline-add" data-form="project-mini" data-id="${p.id}">
-          <input name="title" placeholder="Add a mini goal" autocomplete="off">
+          <input name="title" placeholder="Add a milestone (e.g. First draft done)" autocomplete="off">
           <input name="date" type="date" aria-label="Date (optional)" class="date-mini">
           <button class="link strong" type="submit">Add</button>
         </form>
@@ -273,7 +273,8 @@ export const projectActions = {
   },
   'project-task-full': (el) => {
     const p = S.getProject(el.dataset.id);
-    openTaskSheet({ date: D.todayKey(), defaults: { projectId: p.id, sectionId: p.sectionId } });
+    // No date unless you pick one: the task stays in the project, off the calendar.
+    openTaskSheet({ date: null, defaults: { projectId: p.id, sectionId: p.sectionId } });
     return false;
   },
   'steps-open': (el) => {

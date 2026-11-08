@@ -582,7 +582,7 @@ export function forecast(today = D.todayKey()) {
     });
   }
 
-  // Project target dates and mini goals in the next 7 days
+  // Project target dates and milestones in the next 7 days
   for (const p of data.projects) {
     if (p.state === 'done') continue;
     if (p.targetDate && p.targetDate >= today && D.daysBetween(today, p.targetDate) <= 7) {
@@ -858,7 +858,7 @@ export function projectProgress(id) {
   return { done: tasks.filter((t) => t.done).length, total: tasks.length };
 }
 
-// Dated project and goal mini goals on a given day, for the calendar.
+// Dated project milestones (and goal milestones) on a given day, for the calendar.
 export function milestonesOn(key) {
   const out = [];
   for (const p of data.projects) {
@@ -876,7 +876,7 @@ export function milestonesOn(key) {
   return out;
 }
 
-// Mini goals live on projects and quarterly goals.
+// Milestones (stored as miniGoals) live on projects and quarterly goals.
 export function addMiniGoal(owner, title, date) {
   owner.miniGoals = owner.miniGoals || [];
   owner.miniGoals.push({ id: uid(), title: title.trim(), date: date || null, done: false });

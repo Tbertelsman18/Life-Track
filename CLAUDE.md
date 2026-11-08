@@ -27,6 +27,10 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
 - **Projects**: cards show days in progress (`startedAt`, set when status first becomes In progress; older
   projects fall back to `createdAt`). Three levels: the project is the overall goal, its tasks are the pieces
   (e.g. "Recall guide"), and each task can hold **steps** (`task.steps`, a checklist; all steps checked = task done).
-  Project tasks are planned inside the project itself. Tying projects into the daily task list is a
+  Project tasks are planned inside the project itself and stay off the calendar unless the owner picks a
+  date (never default a date for them); only the project's target date shows on the calendar. Say
+  **Milestones**, never "mini goals" (the owner dislikes that term; the data field is still `miniGoals`).
+  A possible next step: an optional **Due by** date on tasks, separate from the "do on" date.
+  Tying projects into the daily task list is a
   future feature; the owner wants to design it before anything changes on the Projects screens.
 - **Goals** are switched off for now (`GOALS_ON` in `js/store.js`); the data is kept. The owner may bring it back later.

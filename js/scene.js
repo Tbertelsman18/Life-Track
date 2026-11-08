@@ -1,6 +1,6 @@
 // The app background: an original, flat illustration (Beach, Mountains or
-// Forest) whose sky follows the time of day: sunrise in the morning, a sunny
-// sky in the daytime, a sunset in the evening and a moonlit sky at night.
+// Forest) whose sky follows the real time of day in St. Louis: sunrise, a
+// sunny sky in the daytime, sunset, and a moonlit sky at night.
 // Pick the scene in More → Settings (settings.scene; 'off' turns it off).
 
 import * as S from './store.js';
@@ -37,11 +37,43 @@ const LAND = {
   },
 };
 
-function phaseFor(h) {
-  if (h >= 5.5 && h < 8.5) return 'sunrise';
-  if (h >= 8.5 && h < 17) return 'day';
-  if (h >= 17 && h < 20.5) return 'sunset';
-  return 'night';
+// ---------------------------------------------------------------- sun times
+// Real sunrise and sunset for St. Louis, worked out from the date (NOAA's
+// simple formula), so the sky matches what it looks like outside all year.
+const LAT = 38.627, LON = -90.199;
+const RAD = Math.PI / 180;
+
+function sunTimes(date) {
+  const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
+  const n = Math.round((Date.UTC(y, m, d) - Date.UTC(y, 0, 1)) / 864e5) + 1;
+  const g = (2 * Math.PI / 365) * (n - 1);
+  const eq = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+  const decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g)
+    + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+  const ha = Math.acos(Math.cos(90.833 * RAD) / (Math.cos(LAT * RAD) * Math.cos(decl)) - Math.tan(LAT * RAD) * Math.tan(decl)) / RAD;
+  const at = (mins) => new Date(Date.UTC(y, m, d) + mins * 60000);
+  return { rise: at(720 - 4 * (LON + ha) - eq), set: at(720 - 4 * (LON - ha) - eq) };
+}
+
+const MIN = 60000;
+// Which part of the day it is, and how far the sun (or moon) is across the sky (0–1).
+function skyNow(now) {
+  const today = sunTimes(now);
+  const rise = today.rise.getTime(), set = today.set.getTime(), t0 = now.getTime();
+  const across = (a, b) => Math.min(1, Math.max(0, (t0 - a) / (b - a)));
+  if (t0 >= rise - 40 * MIN && t0 < rise + 60 * MIN) return { phase: 'sunrise', t: across(rise, set) };
+  if (t0 >= rise + 60 * MIN && t0 < set - 60 * MIN) return { phase: 'day', t: across(rise, set) };
+  if (t0 >= set - 60 * MIN && t0 < set + 30 * MIN) return { phase: 'sunset', t: across(rise, set) };
+  // Night: the moon crosses from after dusk to before dawn
+  let dusk, dawn;
+  if (t0 >= set) {
+    const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+    dusk = set + 30 * MIN; dawn = sunTimes(tomorrow).rise.getTime() - 40 * MIN;
+  } else {
+    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+    dusk = sunTimes(yesterday).set.getTime() + 35 * MIN; dawn = rise - 40 * MIN;
+  }
+  return { phase: 'night', t: across(dusk, dawn) };
 }
 
 const HORIZON = 252;
@@ -133,16 +165,11 @@ function forest(p) {
 
 // ---------------------------------------------------------------- drawing
 function sceneSVG(name, now) {
-  const h = now.getHours() + now.getMinutes() / 60;
-  const phase = phaseFor(h);
+  const { phase, t } = skyNow(now);
   const sky = SKY[phase];
   const p = LAND[name][phase];
 
-  // Sun travels across the sky from about 6am to 7pm; the moon at night.
-  let t;
-  if (phase === 'night') t = ((h < 12 ? h + 24 : h) - 20.5) / 9; // 8:30pm → 5:30am
-  else t = (h - 6) / 13;
-  t = Math.min(1, Math.max(0, t));
+  // The sun travels across the sky from sunrise to sunset; the moon at night.
   const sunX = 40 + t * 320;
   // Keep the sun inside the open window under the header so it's always in view
   const rise = name === 'beach' ? 58 : 82;
@@ -206,7 +233,7 @@ export function paintScene() {
   document.documentElement.dataset.scene = on ? name : '';
   if (!on) { el.innerHTML = ''; return; }
   const now = new Date();
-  document.body.dataset.phase = phaseFor(now.getHours() + now.getMinutes() / 60);
+  document.body.dataset.phase = skyNow(now).phase;
   el.innerHTML = sceneSVG(name, now);
 }
 

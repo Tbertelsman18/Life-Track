@@ -9,7 +9,7 @@ import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.30 (Nov 8)';
+export const APP_VERSION = '1.31 (Nov 8)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {

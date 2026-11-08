@@ -58,6 +58,8 @@ function render() {
   else if (ui.tab === 'ideas') main.innerHTML = renderIdeas();
   else main.innerHTML = renderMore();
   window.scrollTo(0, y);
+  // The + button (Task / Event / Recurring) is only for the Planner tab.
+  document.body.classList.toggle('no-fab', ui.tab !== 'home');
 
   if (!ui.page && ui.tab === 'home') afterHome();
   if (!ui.page && ui.tab === 'projects') afterProjects();

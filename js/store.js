@@ -75,7 +75,7 @@ function defaultData() {
               pushes:[{from,to,at}], seriesId?, createdAt }
   event:    { id, title, date, endDate|null, time|null, sectionId, lead:'1w', notes }
   project:  { id, title, notes, sectionId, status, targetDate, state:'active'|'radar'|'done',
-              order, miniGoals:[{id,title,date,done}], lastWorkedAt, completedAt, createdAt }
+              order, miniGoals:[{id,title,date,done}], lastWorkedAt, completedAt, startedAt, createdAt }
   yearly:   { id, year, title, notes, createdAt }
   quarterly:{ id, yearlyId, year, q, title, notes, miniGoals:[{id,title,date,done}],
               targets:[{ id, label, perWeek, manual:{weekStart:n} }], createdAt }
@@ -757,8 +757,17 @@ export function updateProject(id, changes, { worked = false } = {}) {
   const p = getProject(id);
   if (!p) return;
   Object.assign(p, changes);
+  if (p.status === 'In progress' && !p.startedAt) p.startedAt = nowISO();
   if (worked) p.lastWorkedAt = nowISO();
   save();
+}
+
+// How many days a project has been in progress (null if it hasn't started or is done).
+// Projects from before this was tracked count from the day they were made.
+export function daysInProgress(p) {
+  if (!p || p.state === 'done' || p.status === 'Not started') return null;
+  const start = p.startedAt || p.createdAt;
+  return start ? Math.max(0, D.daysBetween(D.keyOfISO(start), D.todayKey())) : null;
 }
 
 function touchProject(id) {
@@ -766,6 +775,7 @@ function touchProject(id) {
   if (p) {
     p.lastWorkedAt = nowISO();
     if (p.status === 'Not started' && projectTasks(id).some((t) => t.done)) p.status = 'In progress';
+    if (p.status === 'In progress' && !p.startedAt) p.startedAt = nowISO();
   }
 }
 

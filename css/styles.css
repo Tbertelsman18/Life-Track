@@ -378,7 +378,7 @@ button.row:active, .row-btn:active { background: var(--fill); }
 }
 .fab svg { width: 26px; height: 26px; }
 .fab:active { transform: scale(0.94); }
-body.sheet-open .fab { display: none; }
+body.sheet-open .fab, body.no-fab .fab { display: none; }
 
 /* ---------------------------------------------------------------- tab bar */
 .tabbar {
@@ -512,6 +512,8 @@ label.field-group textarea { box-shadow: none; }
 .proj-prog { display: flex; align-items: center; gap: 10px; }
 .proj-prog .bar { flex: 1; margin: 0; }
 .pnum { font-size: 13px; font-weight: 700; color: var(--text-2); white-space: nowrap; }
+.pdays { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); }
+.pdays.solo { padding: 2px 9px; }
 .bar { height: 5px; border-radius: 999px; background: var(--fill-2); overflow: hidden; margin: 8px 0; }
 .bar i { display: block; height: 100%; border-radius: 999px; transition: width 0.3s; }
 .kv { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
@@ -940,3 +942,19 @@ label.row { cursor: pointer; }
 .idea-bar { display: flex; align-items: flex-end; gap: 10px; padding: 10px 10px 10px 14px; }
 .idea-bar textarea { flex: 1; resize: none; overflow: hidden; background: transparent; padding: 10px 2px; font-size: 16.5px; min-height: 44px; box-shadow: none; }
 .idea-bar .btn { flex: none; min-height: 40px; padding: 0 16px; }
+
+/* Settings: Sections folds into one row */
+.sec-dots { display: flex; gap: 3px; flex: none; }
+.sec-dots .swatch { width: 10px; height: 10px; border-radius: 50%; }
+.chev-toggle { display: inline-flex; transition: transform 0.2s ease; color: var(--muted); }
+.chev-toggle.open { transform: rotate(90deg); }
+
+/* Forest background: the campfire flickers gently and sparks drift up */
+#scene .fl { transform-box: fill-box; transform-origin: 50% 100%; animation: flicker 1.6s ease-in-out infinite; }
+#scene .fl.f2 { animation-duration: 1.2s; animation-delay: -0.4s; }
+#scene .fl.f3 { animation-duration: 0.9s; animation-delay: -0.2s; }
+#scene .spark { animation: spark 2.4s ease-out infinite; opacity: 0; }
+#scene .spark.s1 { animation-delay: -0.6s; } #scene .spark.s2 { animation-delay: -1.2s; } #scene .spark.s3 { animation-delay: -1.8s; }
+@keyframes flicker { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(0.94, 1.07); } 60% { transform: scale(1.05, 0.95); } }
+@keyframes spark { 0% { transform: translateY(14px); opacity: 0; } 25% { opacity: 0.9; } 100% { transform: translateY(-16px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #scene .fl, #scene .spark { animation: none; } #scene .spark { opacity: 0.6; } }

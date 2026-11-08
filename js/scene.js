@@ -1,5 +1,5 @@
 // The app background: an original, flat illustration (Beach, Mountains or
-// Forest) whose sky follows the real time of day in St. Louis: sunrise, a
+// Forest with a campfire) whose sky follows the real time of day in St. Louis: sunrise, a
 // sunny sky in the daytime, sunset, and a moonlit sky at night.
 // Pick the scene in More → Settings (settings.scene; 'off' turns it off).
 
@@ -29,11 +29,16 @@ const LAND = {
     sunset: { far: '#a86d8c', mid: '#6f4571', near: '#3b2747', snow: '#ffd2b0', lake: ['#6a4a7c', '#f09a5c'], pine: '#22152a', ground: '#e3cbc6' },
     night: { far: '#2e3d6d', mid: '#1f2c55', near: '#131c3c', snow: '#c9d4f2', lake: ['#16244f', '#2c4580'], pine: '#0a0f22', ground: '#bcc4d2' },
   },
+  // Forest: misty ridges, a pine-lined clearing and a campfire (brighter as it gets dark).
   forest: {
-    sunrise: { hillFar: '#9b8fb2', treeFar: '#6f6f8e', treeMid: '#45506a', treeNear: '#262c3c', grass: '#55635a', ground: '#b7bba9' },
-    day: { hillFar: '#9ccfb0', treeFar: '#5f9e7c', treeMid: '#2f7a52', treeNear: '#174d33', grass: '#4f8f4f', ground: '#a3c48f' },
-    sunset: { hillFar: '#a8778a', treeFar: '#7a5470', treeMid: '#47304b', treeNear: '#211727', grass: '#4a3b42', ground: '#c8b1a3' },
-    night: { hillFar: '#2a3a63', treeFar: '#1f2d50', treeMid: '#14203a', treeNear: '#0a1222', grass: '#13233a', ground: '#8e9ba6' },
+    sunrise: { ridgeFar: '#a593b8', ridgeNear: '#7a6c96', mist: '#f6d2c8', treeFar: '#5a5576', treeMid: '#3a3a55', treeNear: '#221f33',
+      grass: '#6b6a6c', ground: '#c9b9b0', log: '#3a2a2a', stone: '#8a7f86', fire: 0.8 },
+    day: { ridgeFar: '#a9c4c9', ridgeNear: '#7fa3a0', mist: '#eef6f2', treeFar: '#4f8068', treeMid: '#2e5e45', treeNear: '#1b3d2c',
+      grass: '#7c9c62', ground: '#b9c79a', log: '#6b4a32', stone: '#9a9a90', fire: 0.55 },
+    sunset: { ridgeFar: '#b07a8e', ridgeNear: '#7d5272', mist: '#ffc7a0', treeFar: '#553a55', treeMid: '#38253d', treeNear: '#1f1524',
+      grass: '#5b4148', ground: '#c9a898', log: '#2e1d22', stone: '#7a6268', fire: 0.95 },
+    night: { ridgeFar: '#2c3b66', ridgeNear: '#1f2b50', mist: '#4a5a8a', treeFar: '#16213e', treeMid: '#0f182e', treeNear: '#080d1c',
+      grass: '#16223a', ground: '#7c8796', log: '#1a1418', stone: '#3b4256', fire: 1 },
   },
 };
 
@@ -165,27 +170,67 @@ function slimPine(x, y, h, color) {
   return `<rect x="${x - h * 0.025}" y="${y - h * 0.12}" width="${h * 0.05}" height="${h * 0.12}" fill="${color}"/><path d="${d}" fill="${color}"/>`;
 }
 
-// A row of pines along a hill. Trees in the middle are shorter so the sun stays in view.
-function pineRow(from, to, step, baseY, minH, maxH, color, seed) {
+// A row of pines that leaves an open clearing in the middle (gapFrom–gapTo).
+function treeLine(from, to, step, baseY, minH, maxH, color, seed, gapFrom, gapTo) {
   let out = '';
   for (let x = from, i = 0; x <= to; x += step, i++) {
-    const wobble = ((i * 37 + seed) % 13) / 12;               // 0–1, fixed per tree
-    const center = 0.6 + 0.4 * Math.min(1, Math.abs(x - 200) / 140); // lower near the middle
-    const h = (minH + (maxH - minH) * wobble) * center;
+    if (x > gapFrom && x < gapTo) continue;
+    const wobble = ((i * 37 + seed) % 13) / 12;
+    const edge = Math.min(1, Math.min(Math.abs(x - gapFrom), Math.abs(x - gapTo)) / 50); // shorter at the clearing's edge
+    const h = (minH + (maxH - minH) * wobble) * (0.65 + 0.35 * edge);
     out += slimPine(x + ((i * 5 + seed) % 4) - 2, baseY + ((i * 7 + seed) % 5), h, color);
   }
   return out;
 }
 
+// The campfire: a ring of stones, crossed logs, flickering flames, sparks and a warm glow.
+function campfire(x, y, p) {
+  const f = p.fire;
+  const flame = (w, h, color, cls) => `<path class="${cls}" d="M${x},${y - h} C ${x + w * 0.2},${y - h * 0.62} ${x + w},${y - h * 0.42} ${x + w * 0.7},${y - 2} L${x - w * 0.7},${y - 2} C ${x - w},${y - h * 0.42} ${x - w * 0.15},${y - h * 0.6} ${x},${y - h}Z" fill="${color}"/>`;
+  const stones = [-17, -11, -4, 4, 11, 17].map((dx, i) =>
+    `<ellipse cx="${x + dx}" cy="${y + 1 + (i % 2)}" rx="4.4" ry="2.8" fill="${p.stone}"/>`).join('');
+  const sparks = [[-6, 30, 1.1], [5, 38, 0.9], [1, 46, 0.8], [-3, 54, 0.7]].map(([dx, dy, r], i) =>
+    `<circle class="spark s${i}" cx="${x + dx}" cy="${y - dy}" r="${r}" fill="#ffd27a"/>`).join('');
+  const smoke = f < 0.7
+    ? `<path d="M${x},${y - 30} C ${x - 7},${y - 42} ${x + 7},${y - 52} ${x - 1},${y - 64} C ${x - 6},${y - 72} ${x + 4},${y - 80} ${x + 2},${y - 88}" stroke="#ffffff" stroke-opacity="0.3" stroke-width="4.5" fill="none" stroke-linecap="round"/>`
+    : '';
+  return `
+    <ellipse cx="${x}" cy="${y + 2}" rx="${70 + f * 40}" ry="${14 + f * 8}" fill="url(#fireglow)" opacity="${0.35 + f * 0.55}"/>
+    <circle cx="${x}" cy="${y - 14}" r="${30 + f * 24}" fill="url(#fireglow)" opacity="${0.25 + f * 0.5}"/>
+    ${smoke}
+    <rect x="${x - 16}" y="${y - 5}" width="32" height="5" rx="2.5" fill="${p.log}" transform="rotate(-14 ${x} ${y - 2})"/>
+    <rect x="${x - 16}" y="${y - 5}" width="32" height="5" rx="2.5" fill="${p.log}" transform="rotate(14 ${x} ${y - 2})"/>
+    <g class="flames">
+      ${flame(13, 36, '#ff7a2e', 'fl f1')}
+      ${flame(9.5, 27, '#ffb43a', 'fl f2')}
+      ${flame(5.5, 17, '#ffe9a0', 'fl f3')}
+    </g>
+    ${sparks}
+    ${stones}`;
+}
+
+// A fallen log to sit on, and a stump.
+function seats(x1, y1, x2, y2, p) {
+  return `
+    <rect x="${x1 - 26}" y="${y1 - 8}" width="52" height="9" rx="4.5" fill="${p.log}"/>
+    <ellipse cx="${x1 + 26}" cy="${y1 - 3.5}" rx="3" ry="4.5" fill="${p.stone}" opacity="0.6"/>
+    <rect x="${x2 - 8}" y="${y2 - 12}" width="16" height="12" rx="2" fill="${p.log}"/>
+    <ellipse cx="${x2}" cy="${y2 - 12}" rx="8" ry="2.6" fill="${p.stone}" opacity="0.7"/>`;
+}
+
 function forest(p) {
   const H = HORIZON;
   return `
-    <path d="M0 ${H} L0 212 C 70 198, 140 210, 200 206 S 330 196, 400 210 L400 ${H}Z" fill="${p.hillFar}"/>
-    ${pineRow(-4, 404, 9, 214, 18, 32, p.treeFar, 3)}
-    ${pineRow(-6, 406, 14, 244, 30, 56, p.treeMid, 7)}
-    <path d="M0 ${H - 4} C 90 ${H - 12}, 180 ${H + 2}, 260 ${H - 6} S 360 ${H - 10}, 400 ${H - 4} L400 ${H + 90} L0 ${H + 90}Z" fill="${p.grass}"/>
+    <path d="M0 ${H} L0 168 C 30 150, 62 146, 96 162 C 124 176, 150 190, 200 196 C 252 190, 280 172, 312 156 C 344 142, 376 148, 400 162 L400 ${H}Z" fill="${p.ridgeFar}"/>
+    <path d="M0 ${H} L0 196 C 40 182, 80 186, 120 200 C 160 212, 240 214, 290 198 C 330 186, 370 184, 400 194 L400 ${H}Z" fill="${p.ridgeNear}"/>
+    <rect y="190" width="400" height="34" fill="url(#mist)"/>
+    ${treeLine(-4, 404, 8, 222, 16, 30, p.treeFar, 3, 150, 250)}
+    ${treeLine(-6, 406, 13, 240, 34, 62, p.treeMid, 7, 128, 272)}
+    <path d="M0 ${H - 10} C 70 ${H - 18}, 140 ${H - 22}, 200 ${H - 20} S 330 ${H - 16}, 400 ${H - 10} L400 ${H + 90} L0 ${H + 90}Z" fill="${p.grass}"/>
     <rect y="${H + 88}" width="400" height="${480 - H - 88}" fill="url(#ground)"/>
-    ${[[8, 340, 170], [40, 330, 132], [70, 322, 96], [334, 324, 104], [366, 332, 140], [398, 340, 176]].map(([x, y, h]) => slimPine(x, y, h, p.treeNear)).join('')}`;
+    ${seats(150, H + 6, 252, H + 4, p)}
+    ${campfire(200, H + 2, p)}
+    ${[[6, 346, 178], [36, 334, 136], [64, 324, 100], [338, 326, 108], [368, 334, 144], [398, 346, 182]].map(([x, y, h]) => slimPine(x, y, h, p.treeNear)).join('')}`;
 }
 
 // ---------------------------------------------------------------- drawing
@@ -229,6 +274,10 @@ function sceneSVG(name, now) {
       <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="${p.ground}"/><stop offset="0.55" stop-color="${p.ground}" stop-opacity="0.7"/><stop offset="1" stop-color="${p.ground}" stop-opacity="0"/>
       </linearGradient>
+      <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.mist || '#fff'}" stop-opacity="0"/><stop offset="0.55" stop-color="${p.mist || '#fff'}" stop-opacity="0.55"/><stop offset="1" stop-color="${p.mist || '#fff'}" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="fireglow"><stop offset="0" stop-color="#ffb04a" stop-opacity="0.9"/><stop offset="0.5" stop-color="#ff7a2e" stop-opacity="0.35"/><stop offset="1" stop-color="#ff7a2e" stop-opacity="0"/></radialGradient>
       <radialGradient id="glow"><stop offset="0" stop-color="${sky.glow}" stop-opacity="0.75"/><stop offset="1" stop-color="${sky.glow}" stop-opacity="0"/></radialGradient>
     </defs>
     <rect width="400" height="${HORIZON + 4}" fill="url(#sky)"/>

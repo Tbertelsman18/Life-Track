@@ -17,6 +17,12 @@ function ago(iso) {
   return `${Math.floor(n / 7)} weeks ago`;
 }
 
+// "Started today", "1 day", "12 days"
+function daysLabel(n) {
+  if (n === null) return '';
+  return n === 0 ? 'Started today' : n === 1 ? '1 day' : `${n} days`;
+}
+
 const statusClass = (s) => ({ 'Not started': 'st-new', 'In progress': 'st-prog', Stuck: 'st-stuck', Done: 'st-done' }[s] || '');
 
 // ---------------------------------------------------------------- list
@@ -52,6 +58,7 @@ export function renderProjects() {
 function projectCard(p, i) {
   const prog = S.projectProgress(p.id);
   const sortable = p.state !== 'done';
+  const days = S.daysInProgress(p);
   const nextMini = (p.miniGoals || []).filter((m) => !m.done && m.date).sort((a, b) => a.date.localeCompare(b.date))[0];
   return `
     <li class="proj-card" data-id="${p.id}" style="--c:${sectionColor(p.sectionId)}">
@@ -62,7 +69,8 @@ function projectCard(p, i) {
           <span class="proj-title">${esc(p.title)}</span>
           ${p.state === 'active' ? `<span class="status ${statusClass(p.status)}">${esc(p.status)}</span>` : ''}
         </span>
-        ${prog.total ? `<span class="proj-prog">${progressBar(prog.done / prog.total, sectionColor(p.sectionId))}<span class="pnum">${prog.done}/${prog.total}</span></span>` : ''}
+        ${prog.total ? `<span class="proj-prog">${progressBar(prog.done / prog.total, sectionColor(p.sectionId))}<span class="pnum">${prog.done}/${prog.total}</span>${days !== null ? `<span class="pdays">${daysLabel(days)}</span>` : ''}</span>`
+          : days !== null ? `<span class="proj-prog"><span class="pdays solo">${daysLabel(days)}</span></span>` : ''}
         <span class="task-meta">
           ${p.state === 'done' ? `Finished ${p.completedAt ? D.formatShort(D.keyOfISO(p.completedAt)) : ''}` : `Worked on ${ago(p.lastWorkedAt)}`}
           ${p.targetDate && p.state !== 'done' ? ` · Target ${D.formatMonthDay(p.targetDate)}` : ''}
@@ -94,6 +102,7 @@ export function renderProjectPage(id) {
       <section class="card">
         <div class="kv"><span>Section</span><b><i class="swatch" style="background:${sectionColor(p.sectionId)}"></i> ${esc(S.getSection(p.sectionId)?.name || 'None')}</b></div>
         <div class="kv"><span>Target date</span><b>${p.targetDate ? `${D.formatShort(p.targetDate)} <small>(${D.countdown(D.todayKey(), p.targetDate)})</small>` : '—'}</b></div>
+        ${S.daysInProgress(p) !== null ? `<div class="kv"><span>In progress</span><b>${daysLabel(S.daysInProgress(p))}</b></div>` : ''}
         <div class="kv"><span>Last worked on</span><b>${ago(p.lastWorkedAt)}</b></div>
         <div class="kv"><span>List</span><b>${{ active: 'Active', radar: 'Radar', done: 'Done' }[p.state]}</b></div>
         <div class="status-chips">${statuses}</div>

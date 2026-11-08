@@ -9,7 +9,7 @@ import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.36 (Nov 9)';
+export const APP_VERSION = '1.37 (Nov 7)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {
@@ -64,8 +64,15 @@ export function renderMore() {
       </ul>
 
       <h3 class="group-label">Sections</h3>
-      <ul class="group">${sections}
-        <li><button class="row accent" data-action="add-section">${icon('plus')}<span class="row-label">Add section</span></button></li>
+      <ul class="group">
+        <li><button class="row" data-action="toggle-sections" aria-expanded="${ui.sectionsOpen ? 'true' : 'false'}">
+          <span class="sec-dots">${data.sections.slice(0, 6).map((s) => `<i class="swatch" style="background:${s.color}"></i>`).join('')}</span>
+          <span class="row-label">Edit sections</span>
+          <span class="row-value">${data.sections.length}</span>
+          <span class="chev-toggle ${ui.sectionsOpen ? 'open' : ''}">${icon('chev-right')}</span>
+        </button></li>
+        ${ui.sectionsOpen ? `${sections}
+        <li><button class="row accent" data-action="add-section">${icon('plus')}<span class="row-label">Add section</span></button></li>` : ''}
       </ul>
 
       <h3 class="group-label">Settings</h3>
@@ -449,6 +456,7 @@ export const moreActions = {
   'history-week': (el) => { ui.historyWeek = el.dataset.week; },
   'history-by': (el) => { ui.historyBy = el.dataset.by; },
   'edit-section': (el) => { openSectionSheet(el.dataset.id); return false; },
+  'toggle-sections': () => { ui.sectionsOpen = !ui.sectionsOpen; },
   'add-section': () => { openSectionSheet(null); return false; },
   'set-scene': (el) => { S.setSetting('scene', el.dataset.scene); paintScene(); return false; },
   'toggle-ku': () => {

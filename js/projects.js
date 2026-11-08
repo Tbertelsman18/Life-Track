@@ -105,6 +105,8 @@ export function renderProjectPage(id) {
   const oneOff = tasks.filter((t) => !t.repeat);
   const repeating = tasks.filter((t) => t.repeat);
   const minis = [...(p.miniGoals || [])].sort((a, b) => (a.done - b.done) || (a.date || '9999').localeCompare(b.date || '9999'));
+  const known = new Set(minis.map((m) => m.id));
+  const otherTasks = oneOff.filter((t) => !t.milestoneId || !known.has(t.milestoneId));
   const statuses = S.PROJECT_STATUSES.map((s) => `
     <button class="chip ${p.status === s ? 'on' : ''} ${statusClass(s)}" data-action="project-status" data-id="${p.id}" data-status="${s}">${s}</button>`).join('');
 
@@ -120,31 +122,34 @@ export function renderProjectPage(id) {
         <div class="status-chips">${statuses}</div>
       </section>
 
-      <section class="card">
-        <div class="card-head">
-          <h2 class="card-title">Tasks ${prog.total ? `<span class="count">${prog.done}/${prog.total}</span>` : ''}</h2>
-        </div>
-        ${prog.total ? progressBar(prog.done / prog.total, sectionColor(p.sectionId)) : ''}
-        ${oneOff.length ? `<ul class="task-list">${oneOff.map((t) => taskWithSteps(t, isOpen(t, oneOff))).join('')}</ul>` : ''}
-        ${repeating.length ? `<h3 class="sub-label">${icon('repeat')} Repeating</h3>
-          <ul class="task-list">${repeating.map(repeatRow).join('')}</ul>` : ''}
-        <form class="inline-add" data-form="project-task" data-id="${p.id}">
-          <input name="title" placeholder="Add a task (e.g. Recall guide)" autocomplete="off">
-          <input name="date" type="date" aria-label="Date (optional)" class="date-mini">
-          <button class="link strong" type="submit">Add</button>
-        </form>
-        <button class="add-inline" data-action="project-task-full" data-id="${p.id}">${icon('repeat')} Add a repeating task or set a time…</button>
-        <p class="hint left">Tasks stay here in the project unless you give them a date. Each task can have its own steps; when all its steps are checked, the task is done.</p>
-      </section>
+      ${prog.total ? `<section class="card proj-progress">
+        <h2 class="card-title">Progress <span class="count">${prog.done}/${prog.total} tasks</span></h2>
+        ${progressBar(prog.done / prog.total, sectionColor(p.sectionId))}
+      </section>` : ''}
+
+      ${minis.map((m) => milestoneBlock(p, m)).join('')}
+
+      ${otherTasks.length || !minis.length ? `<section class="card ms-card">
+        <h2 class="card-title">${minis.length ? 'Other tasks' : 'Tasks'} ${otherTasks.length ? `<span class="count">${otherTasks.filter((t) => t.done).length}/${otherTasks.length}</span>` : ''}</h2>
+        ${otherTasks.length ? `<ul class="task-list">${otherTasks.map((t) => taskWithSteps(t, isOpen(t, oneOff))).join('')}</ul>` : ''}
+        ${addTaskForm(p, null)}
+      </section>` : ''}
+
+      ${repeating.length ? `<section class="card">
+        <h2 class="card-title">${icon('repeat')} Repeating</h2>
+        <ul class="task-list">${repeating.map(repeatRow).join('')}</ul>
+      </section>` : ''}
 
       <section class="card">
-        <h2 class="card-title">Milestones</h2>
-        ${minis.length ? `<ul class="task-list">${minis.map((m) => miniRow(m, 'project', p.id)).join('')}</ul>` : ''}
-        <form class="inline-add" data-form="project-mini" data-id="${p.id}">
+        <form class="inline-add top-line" data-form="project-mini" data-id="${p.id}">
+          <span class="ms-plus">${icon('flag')}</span>
           <input name="title" placeholder="Add a milestone (e.g. First draft done)" autocomplete="off">
           <input name="date" type="date" aria-label="Date (optional)" class="date-mini">
           <button class="link strong" type="submit">Add</button>
         </form>
+        <button class="add-inline" data-action="project-task-full" data-id="${p.id}">${icon('repeat')} Add a repeating task or set a time…</button>
+        <p class="hint left">Milestones are the big pieces of the project; each one holds its tasks, and each task can hold steps.
+          Tasks stay here unless you tap one and give it a date. A milestone checks itself off when all its tasks are done.</p>
       </section>
 
       <section class="card">
@@ -169,6 +174,37 @@ function isOpen(t, list) {
   if (t.id in ui.openSteps) return ui.openSteps[t.id];
   const next = list.find((x) => !x.done && x.steps && x.steps.length);
   return Boolean(next && next.id === t.id);
+}
+
+// One milestone: its checkbox, date and progress, then its tasks underneath.
+function milestoneBlock(p, m) {
+  const list = S.milestoneTasks(p.id, m.id);
+  const done = list.filter((t) => t.done).length;
+  const auto = list.length > 0; // with tasks, it checks itself off
+  const oneOff = S.projectTasks(p.id).filter((x) => !x.repeat);
+  return `<section class="card ms-card ${m.done ? 'ms-done' : ''}">
+    <div class="ms-head">
+      ${auto
+        ? `<span class="check square ${m.done ? 'on' : ''}" style="--c:var(--accent)" aria-label="${m.done ? 'Done' : 'Not done yet'}">${m.done ? icon('check') : ''}</span>`
+        : `<button class="check square" style="--c:var(--accent)" data-action="mini-toggle" data-kind="project" data-owner="${p.id}" data-mid="${m.id}"
+            aria-label="${m.done ? 'Mark not done' : 'Mark done'}">${m.done ? icon('check') : ''}</button>`}
+      <div class="ms-title">
+        <span class="ms-name">${icon('flag')} ${esc(m.title)}</span>
+        <span class="task-meta">${m.date ? `${D.formatShort(m.date)}${!m.done ? ` · ${D.countdown(D.todayKey(), m.date)}` : ''}` : 'No date'}${list.length ? ` · ${done}/${list.length} tasks` : ''}</span>
+      </div>
+      <button class="icon-btn sm muted" data-action="mini-delete" data-kind="project" data-owner="${p.id}" data-mid="${m.id}" aria-label="Delete milestone">${icon('x')}</button>
+    </div>
+    ${list.length ? progressBar(done / list.length, sectionColor(p.sectionId)) : ''}
+    ${list.length ? `<ul class="task-list">${list.map((t) => taskWithSteps(t, isOpen(t, oneOff))).join('')}</ul>` : ''}
+    ${addTaskForm(p, m.id)}
+  </section>`;
+}
+
+function addTaskForm(p, milestoneId) {
+  return `<form class="inline-add" data-form="project-task" data-id="${p.id}" data-milestone="${milestoneId || ''}">
+    <input name="title" placeholder="${milestoneId ? 'Add a task to this milestone' : 'Add a task (e.g. Recall guide)'}" autocomplete="off">
+    <button class="link strong" type="submit">Add</button>
+  </form>`;
 }
 
 // A project task, with a fold-out checklist of its steps underneath.
@@ -313,7 +349,7 @@ export const projectActions = {
   'mini-delete': (el) => {
     const o = ownerOf(el);
     const m = o?.miniGoals.find((x) => x.id === el.dataset.mid);
-    if (m && confirm(`Delete mini goal "${m.title}"?`)) S.deleteMiniGoal(o, m.id);
+    if (m && confirm(`Delete milestone "${m.title}"? Its tasks stay in the project under "Other tasks".`)) S.deleteMiniGoal(o, m.id);
     return false;
   },
 };
@@ -332,8 +368,9 @@ export const projectForms = {
     const p = S.getProject(form.dataset.id);
     const title = form.title.value.trim();
     if (!p || !title) return;
-    S.addTask({ title, date: form.date.value || null, projectId: p.id, sectionId: p.sectionId });
-    refocus('project-task');
+    const milestoneId = form.dataset.milestone || null;
+    S.addTask({ title, date: null, projectId: p.id, sectionId: p.sectionId, milestoneId }); // undated: tap the task to give it a day
+    setTimeout(() => document.querySelector(`[data-form="project-task"][data-milestone="${milestoneId || ''}"] input[name=title]`)?.focus(), 0);
   },
   'project-mini': (form) => {
     const p = S.getProject(form.dataset.id);

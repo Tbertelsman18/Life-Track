@@ -5,6 +5,13 @@ import * as S from './store.js';
 import { $, esc, icon, openSheet, closeSheet, sheetTop, sectionOptions, wireSectionSelect, toast } from './ui.js';
 
 // ---------------------------------------------------------------- dropdown options
+function milestoneOptions(projectId, selected) {
+  const p = projectId && S.getProject(projectId);
+  const list = (p && p.miniGoals) || [];
+  return `<option value="">None (Other tasks)</option>` + list.map((m) =>
+    `<option value="${m.id}" ${m.id === selected ? 'selected' : ''}>${esc(m.title)}</option>`).join('');
+}
+
 function projectOptions(selected) {
   const active = S.projectsIn('active');
   const radar = S.projectsIn('radar');
@@ -89,7 +96,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   const t = id ? S.getTask(id) : null;
   const data = S.getData();
   const v = t ? { ...t } : {
-    title: '', notes: '', date, time: null, projectId: null, goalId: null, atWork: false,
+    title: '', notes: '', date, time: null, projectId: null, milestoneId: null, goalId: null, atWork: false,
     sectionId: data.sections[0]?.id || null, repeat: null, ...defaults,
   };
   if (!t && v.projectId && !defaults.sectionId) v.sectionId = S.getProject(v.projectId)?.sectionId ?? v.sectionId;
@@ -149,6 +156,10 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
         <label class="field">
           <span>Project</span>
           <select name="projectId">${projectOptions(v.projectId)}</select>
+        </label>
+        <label class="field milestone-field" ${v.projectId && (S.getProject(v.projectId)?.miniGoals || []).length ? '' : 'hidden'}>
+          <span>Milestone</span>
+          <select name="milestoneId">${milestoneOptions(v.projectId, v.milestoneId)}</select>
         </label>
         ${S.GOALS_ON ? `<label class="field">
           <span>Goal / step</span>
@@ -234,6 +245,13 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   form.date.addEventListener('change', tleadHint);
   tleadHint();
 
+  // The Milestone choice follows the chosen project
+  form.projectId.addEventListener('change', () => {
+    const pid = form.projectId.value;
+    form.milestoneId.innerHTML = milestoneOptions(pid, null);
+    form.querySelector('.milestone-field').hidden = !(pid && (S.getProject(pid)?.miniGoals || []).length);
+  });
+
   const more = form.querySelector('[data-act="more"]');
   more.addEventListener('click', () => {
     const box = form.querySelector('.more-opts');
@@ -289,6 +307,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       time: form.time.value || null,
       sectionId: form.sectionId.value || null,
       projectId: form.projectId.value || null,
+      milestoneId: form.projectId.value ? (form.milestoneId.value || null) : null,
       goalId: form.goalId ? (form.goalId.value || null) : (v.goalId || null),
       atWork: Boolean(v.atWork),
       important: form.important.checked,

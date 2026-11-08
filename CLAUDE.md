@@ -25,8 +25,10 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
 - Bottom tabs: **Planner** (was Home) · **Projects** · **Settings** (was More; still holds backup,
   planning, history, sections, info, etc.). Internally the tabs are still 'home' and 'more'.
 - **Projects**: cards show days in progress (`startedAt`, set when status first becomes In progress; older
-  projects fall back to `createdAt`). Three levels: the project is the overall goal, its tasks are the pieces
-  (e.g. "Recall guide"), and each task can hold **steps** (`task.steps`, a checklist; all steps checked = task done).
+  projects fall back to `createdAt`). Levels: the project is the overall goal → **Milestones** (the big pieces,
+  stored in `project.miniGoals`) → tasks under each milestone (`task.milestoneId`; tasks without one show under
+  "Other tasks") → **steps** inside a task (`task.steps`; all steps checked = task done). A milestone that has tasks
+  checks itself off when all its tasks are done.
   Project tasks are planned inside the project itself and stay off the calendar unless the owner picks a
   date (never default a date for them); only the project's target date shows on the calendar. Say
   **Milestones**, never "mini goals" (the owner dislikes that term; the data field is still `miniGoals`).

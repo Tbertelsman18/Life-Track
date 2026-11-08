@@ -10,7 +10,7 @@ All six stages are built:
 
 1. **Tasks, sections, recurring tasks, Day/Week/Month views, mini calendar, Export/Import**
 2. **Events** (single or multi-day) with "tell me ahead" lead times, the **Forecast** with countdowns, and the **Daily Check**. You're warned when you schedule a task during a multi-day event.
-3. **Projects**: an Active list in drag-to-reorder priority order, plus Radar and Done. Each project has notes, a task checklist, milestones with dates, a target date, a status, and "last worked on". When you finish a project, the app offers to move the next Radar project up.
+3. **Projects**: an Active list in drag-to-reorder priority order, plus Radar and Done. Each project has notes, milestones (each holding its tasks, and each task its steps), a target date, a status, and "last worked on". When you finish a project, the app offers to move the next Radar project up.
 4. **Goals**: yearly goals, quarterly goals, weekly targets with streaks, mini goals, task linking, slipping goals, reminders to set goals (2 weeks before each quarter, and in December for next year), and a review of last quarter.
 5. **Info and Lists**
 6. **Sunday Planning**, **History** (a weekly chart broken down by section, project or goal), **Most Pushed Off**, and **Settings**

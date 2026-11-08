@@ -280,6 +280,8 @@ export function updateTask(id, changes) {
     }
   }
   Object.assign(t, changes);
+  const p = t.projectId && getProject(t.projectId);
+  if (p) syncMilestones(p);
   save();
 }
 
@@ -812,9 +814,25 @@ export function daysInProgress(p) {
   return start ? Math.max(0, D.daysBetween(D.keyOfISO(start), D.todayKey())) : null;
 }
 
+// A milestone that has tasks is done when all of its tasks are done.
+function syncMilestones(p) {
+  for (const m of p.miniGoals || []) {
+    const list = data.tasks.filter((t) => t.projectId === p.id && t.milestoneId === m.id && !t.repeat);
+    if (!list.length) continue;
+    const all = list.every((t) => t.done);
+    if (all !== Boolean(m.done)) { m.done = all; m.doneAt = all ? nowISO() : null; }
+  }
+}
+
+// Tasks inside one milestone (one-time tasks only)
+export function milestoneTasks(projectId, milestoneId) {
+  return projectTasks(projectId).filter((t) => !t.repeat && (t.milestoneId || null) === (milestoneId || null));
+}
+
 function touchProject(id) {
   const p = id && getProject(id);
   if (p) {
+    syncMilestones(p);
     p.lastWorkedAt = nowISO();
     if (p.status === 'Not started' && projectTasks(id).some((t) => t.done)) p.status = 'In progress';
     if (p.status === 'In progress' && !p.startedAt) p.startedAt = nowISO();
@@ -891,6 +909,8 @@ export function toggleMiniGoal(owner, mid) {
 
 export function deleteMiniGoal(owner, mid) {
   owner.miniGoals = (owner.miniGoals || []).filter((x) => x.id !== mid);
+  // Its tasks stay in the project, under "Other tasks"
+  data.tasks.forEach((t) => { if (t.milestoneId === mid) t.milestoneId = null; });
   save();
 }
 

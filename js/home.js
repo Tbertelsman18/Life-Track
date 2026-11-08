@@ -322,7 +322,7 @@ export function taskRow(t, key, { showDate = false, num = null, drag = false, in
   if (showDate && t.date) meta.push(D.formatShort(t.date));
   if (t.time) meta.push(`<span class="time-pill">${icon('clock')}${D.formatTime(t.time)}</span>`);
   if (sec) meta.push(esc(sec.name));
-  if (t.projectId && !inProject) { const p = S.getProject(t.projectId); if (p) meta.push(`${icon('folder')} ${esc(p.title)}`); }
+  if (t.projectId && !inProject) { const p = S.getProject(t.projectId); const m = p && t.milestoneId && (p.miniGoals || []).find((x) => x.id === t.milestoneId); if (p) meta.push(`${icon('folder')} ${esc(p.title)}${m ? ' › ' + esc(m.title) : ''}`); }
   if (t.notes && t.notes.trim()) meta.push(`<span class="has-notes" aria-label="Has notes">${icon('note')}</span>`);
   if (t.atWork && !drag) meta.push(`${icon('briefcase')} At work`);
   if (S.GOALS_ON && t.goalId) { const g = S.resolveGoal(t.goalId); if (g) meta.push(`${icon('target')} ${esc(g.target ? g.target.label : (g.quarterly || g.yearly)?.title)}`); }

@@ -980,3 +980,17 @@ label.row { cursor: pointer; }
 .tstep.done .check { background: var(--c); border-color: var(--c); color: #fff; }
 .inline-add.step-add { border-top: 0; padding-top: 2px; margin-top: 0; }
 .inline-add.step-add input { font-size: 15px; }
+
+/* Project page: milestones, each holding its tasks */
+.ms-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.ms-head .check { flex: none; }
+.ms-head span.check { display: inline-flex; }
+.ms-head .check.on { background: var(--accent); border-color: var(--accent); }
+.ms-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ms-name { font-weight: 650; font-size: 17px; display: flex; align-items: center; gap: 6px; overflow-wrap: anywhere; }
+.ms-name .ic { width: 16px; height: 16px; color: var(--accent); }
+.ms-card .bar { margin: 2px 0 6px; }
+.ms-card.ms-done .ms-name { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+.inline-add.top-line { border-top: 0; padding-top: 0; margin-top: 0; }
+.ms-plus { display: inline-flex; color: var(--accent); }
+.ms-plus .ic { width: 18px; height: 18px; }

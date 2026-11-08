@@ -868,7 +868,7 @@ body.beach #scene svg { width: 100%; height: auto; display: block; }
 body.beach { --bg: #f4e9d8; --accent: #0e7f72; --accent-2: #14998a; --accent-soft: rgba(14, 127, 114, 0.11); --sel-bg: rgba(14, 127, 114, 0.12); }
 html.beach { background: #f4e9d8; }
 html.beach[data-scene="mountains"] { background: #e8edf1; }
-html.beach[data-scene="forest"] { background: #e9efe2; }
+html.beach[data-scene="forest"] { background: #e3ecd9; }
 body.beach { background: transparent; }
 
 /* Frosted-glass cards */

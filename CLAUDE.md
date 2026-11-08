@@ -39,4 +39,6 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   A possible next step: an optional **Due by** date on tasks, separate from the "do on" date.
   Tying projects into the daily task list is a
   future feature; the owner wants to design it before anything changes on the Projects screens.
+- **Radar** projects are real projects, just not on the top list right now: same page as Active (milestones →
+  tasks), no "Radar project" wording. **Ideas** are lighter: quick one-line thoughts that may get dropped, no planning.
 - **Goals** are switched off for now (`GOALS_ON` in `js/store.js`); the data is kept. The owner may bring it back later.

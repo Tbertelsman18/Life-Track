@@ -304,6 +304,8 @@ a { color: var(--accent); }
 }
 .inline-add input:focus { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--card); }
 .inline-add .date-mini { flex: 0 0 auto; width: 132px; font-size: 15px; }
+.inline-add.top-line input[name=title] { flex: 1 1 auto; min-width: 0; }
+.inline-add.top-line .date-mini { width: 112px; font-size: 14px; padding-left: 8px; padding-right: 8px; }
 .inline-add .num-mini { flex: 0 0 56px; text-align: center; }
 
 .drag { width: 30px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); cursor: grab; touch-action: none; flex: none; opacity: 0.7; }

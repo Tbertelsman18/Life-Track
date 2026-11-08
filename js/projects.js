@@ -47,7 +47,7 @@ export function renderProjects() {
   if (!list.length) {
     body = {
       active: `<p class="empty big">No active projects yet.<br>Add one, then press and hold ≡ to drag it into priority order (#1 at the top).</p>`,
-      radar: `<p class="empty big">Radar holds projects that have come up but aren't active yet.</p>`,
+      radar: `<p class="empty big">Projects you want to get done at some point, just not on your top list right now.<br>Each one works like an active project: add milestones and tasks whenever you're ready.</p>`,
       done: `<p class="empty big">Finished projects show up here.</p>`,
     }[ui.projectsTab];
   } else {
@@ -60,9 +60,9 @@ export function renderProjects() {
       <div class="seg proj-seg">${tabs}</div>
       ${ui.projectsTab !== 'done' ? `<p class="hint">${ui.projectsTab === 'active'
         ? 'Press and hold ☰, then drag to change priority. #1 is your top project.'
-        : 'Next in line is at the top. Drag ☰ to reorder.'}</p>` : ''}
+        : 'Projects for later. Start adding milestones and tasks anytime. Drag ☰ to reorder; the top one is next in line.'}</p>` : ''}
       ${body}
-      ${ui.projectsTab !== 'done' ? `<button class="btn wide" data-action="new-project">${icon('plus')} New ${ui.projectsTab === 'radar' ? 'Radar' : ''} project</button>` : ''}
+      ${ui.projectsTab !== 'done' ? `<button class="btn wide" data-action="new-project">${icon('plus')} New project</button>` : ''}
     </div>`;
 }
 
@@ -115,7 +115,7 @@ export function renderProjectPage(id) {
       <section class="card">
         <form class="inline-add top-line" data-form="project-mini" data-id="${p.id}">
           <span class="ms-plus">${icon('flag')}</span>
-          <input name="title" placeholder="New milestone" autocomplete="off">
+          <input name="title" placeholder="Milestone" autocomplete="off">
           <input name="date" type="date" aria-label="Date (optional)" class="date-mini">
           <button class="link strong" type="submit">Add</button>
         </form>

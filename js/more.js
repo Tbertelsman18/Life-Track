@@ -9,7 +9,7 @@ import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.44 (Nov 7)';
+export const APP_VERSION = '1.45 (Nov 7)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {
@@ -381,7 +381,7 @@ export function renderIdeas() {
           <span class="info-body">${esc(i.text)}</span>
           <span class="task-meta">${esc(D.formatShort(D.keyOfISO(i.createdAt)))}</span>
         </button></li>`).join('')}</ul>`
-      : '<p class="empty">Ideas that pop into your head. Type one in the bar above and tap Save. They stay here, separate from your tasks.</p>'}`;
+      : '<p class="empty">Quick ideas you might turn into a project someday, or drop. No planning needed: type one in the bar above and tap Save.</p>'}`;
 }
 
 // ---------------------------------------------------------------- backup

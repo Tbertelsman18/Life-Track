@@ -280,8 +280,6 @@ export function updateTask(id, changes) {
     }
   }
   Object.assign(t, changes);
-  const p = t.projectId && getProject(t.projectId);
-  if (p) syncMilestones(p);
   save();
 }
 
@@ -814,15 +812,6 @@ export function daysInProgress(p) {
   return start ? Math.max(0, D.daysBetween(D.keyOfISO(start), D.todayKey())) : null;
 }
 
-// A milestone that has tasks is done when all of its tasks are done.
-function syncMilestones(p) {
-  for (const m of p.miniGoals || []) {
-    const list = data.tasks.filter((t) => t.projectId === p.id && t.milestoneId === m.id && !t.repeat);
-    if (!list.length) continue;
-    const all = list.every((t) => t.done);
-    if (all !== Boolean(m.done)) { m.done = all; m.doneAt = all ? nowISO() : null; }
-  }
-}
 
 // Tasks inside one milestone (one-time tasks only)
 export function milestoneTasks(projectId, milestoneId) {
@@ -832,7 +821,6 @@ export function milestoneTasks(projectId, milestoneId) {
 function touchProject(id) {
   const p = id && getProject(id);
   if (p) {
-    syncMilestones(p);
     p.lastWorkedAt = nowISO();
     if (p.status === 'Not started' && projectTasks(id).some((t) => t.done)) p.status = 'In progress';
     if (p.status === 'In progress' && !p.startedAt) p.startedAt = nowISO();
@@ -876,16 +864,11 @@ export function projectProgress(id) {
   return { done: tasks.filter((t) => t.done).length, total: tasks.length };
 }
 
-// Dated project milestones (and goal milestones) on a given day, for the calendar.
+// Dated goal milestones on a given day, for the calendar (only when Goals is on).
 export function milestonesOn(key) {
   const out = [];
-  for (const p of data.projects) {
-    if (p.state === 'done') continue;
-    if (p.targetDate === key) out.push({ kind: 'project', id: p.id, title: `${p.title} target`, sectionId: p.sectionId, done: false });
-    for (const m of p.miniGoals || []) {
-      if (m.date === key) out.push({ kind: 'project', id: p.id, title: m.title, sectionId: p.sectionId, done: m.done });
-    }
-  }
+  // Projects stay off the schedule for now: their target dates and milestones
+  // are shown inside the project only.
   for (const g of GOALS_ON ? data.quarterlyGoals : []) {
     for (const m of g.miniGoals || []) {
       if (m.date === key) out.push({ kind: 'goal', id: g.id, title: m.title, sectionId: null, done: m.done });

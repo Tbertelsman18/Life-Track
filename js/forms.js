@@ -101,6 +101,8 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   };
   if (!t && v.projectId && !defaults.sectionId) v.sectionId = S.getProject(v.projectId)?.sectionId ?? v.sectionId;
   const repeatDays = new Set(v.repeat ? v.repeat.days : []);
+  // A one-time project task stays off the schedule unless "Add to my schedule" is on
+  const projTask = Boolean(v.projectId) && !v.repeat;
   const occurrence = t && t.repeat && date ? date : null;
 
   const dayChips = D.WEEK_ORDER.map((d) => `
@@ -127,6 +129,11 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       ${importantToggle(v.important)}
 
       <div class="field-group">
+        ${projTask ? `<label class="field toggle-field">
+          <span class="imp-label">${icon('calendar')} Add to my schedule<small>Off: it stays in the project</small></span>
+          <input type="checkbox" name="onSched" class="switch" ${v.date ? 'checked' : ''}>
+        </label>` : ''}
+        <div class="sched-fields" ${projTask && !v.date ? 'hidden' : ''}>
         <label class="field">
           <span class="date-label">${repeatDays.size ? 'Starts' : 'Date'}</span>
           <input type="date" name="date" value="${v.date || ''}">
@@ -136,6 +143,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
           <span>Time <small class="opt">optional</small></span>
           <input type="time" name="time" value="${v.time || ''}">
         </label>
+        </div>
       </div>
 
       <div class="field-group">
@@ -252,6 +260,14 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
     form.querySelector('.milestone-field').hidden = !(pid && (S.getProject(pid)?.miniGoals || []).length);
   });
 
+  if (projTask) {
+    form.onSched.addEventListener('change', () => {
+      form.querySelector('.sched-fields').hidden = !form.onSched.checked;
+      if (form.onSched.checked && !form.date.value) form.date.value = D.todayKey();
+      updateWarn();
+    });
+  }
+
   const more = form.querySelector('[data-act="more"]');
   more.addEventListener('click', () => {
     const box = form.querySelector('.more-opts');
@@ -285,6 +301,7 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
     const title = form.title.value.trim();
     if (!title) return;
     let dateVal = form.date.value || null;
+    if (projTask && !form.onSched.checked) dateVal = null;
     let repeat = null;
     if (repeatDays.size) {
       if (!dateVal) dateVal = D.todayKey();

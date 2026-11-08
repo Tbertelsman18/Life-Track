@@ -327,7 +327,6 @@ export function taskRow(t, key, { showDate = false, num = null, drag = false, in
   if (t.atWork && !drag) meta.push(`${icon('briefcase')} At work`);
   if (S.GOALS_ON && t.goalId) { const g = S.resolveGoal(t.goalId); if (g) meta.push(`${icon('target')} ${esc(g.target ? g.target.label : (g.quarterly || g.yearly)?.title)}`); }
   if (t.repeat) meta.push(`${icon('repeat')} ${repeatLabel(t.repeat.days)}`);
-  if (t.steps && t.steps.length && !inProject) { const sp = S.stepProgress(t); meta.push(`${sp.done}/${sp.total} steps`); }
   if (t.pushes && t.pushes.length) meta.push(`<span class="pushed">pushed ${t.pushes.length}×</span>`);
   return `
     <li class="task ${done ? 'done' : ''} ${num ? 'numbered' : ''}" style="--c:${color}" data-id="${t.id}">

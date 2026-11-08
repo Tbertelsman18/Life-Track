@@ -131,7 +131,7 @@ export function renderProjectPage(id) {
 
       ${otherTasks.length || !minis.length ? `<section class="card ms-card">
         <h2 class="card-title">${minis.length ? 'Other tasks' : 'Tasks'} ${otherTasks.length ? `<span class="count">${otherTasks.filter((t) => t.done).length}/${otherTasks.length}</span>` : ''}</h2>
-        ${otherTasks.length ? `<ul class="task-list">${otherTasks.map((t) => taskWithSteps(t, isOpen(t, oneOff))).join('')}</ul>` : ''}
+        ${otherTasks.length ? `<ul class="task-list">${otherTasks.map(projectTaskRow).join('')}</ul>` : ''}
         ${addTaskForm(p, null)}
       </section>` : ''}
 
@@ -148,8 +148,8 @@ export function renderProjectPage(id) {
           <button class="link strong" type="submit">Add</button>
         </form>
         <button class="add-inline" data-action="project-task-full" data-id="${p.id}">${icon('repeat')} Add a repeating task or set a time…</button>
-        <p class="hint left">Milestones are the big pieces of the project; each one holds its tasks, and each task can hold steps.
-          Tasks stay here unless you tap one and give it a date. A milestone checks itself off when all its tasks are done.</p>
+        <p class="hint left">Milestones are the big parts of the project. Under each one, list the tasks it takes to reach it.
+          Check a milestone off yourself when it's reached. Project tasks stay here, off your schedule, unless you tap one and turn on <b>Add to my schedule</b>.</p>
       </section>
 
       <section class="card">
@@ -180,14 +180,11 @@ function isOpen(t, list) {
 function milestoneBlock(p, m) {
   const list = S.milestoneTasks(p.id, m.id);
   const done = list.filter((t) => t.done).length;
-  const auto = list.length > 0; // with tasks, it checks itself off
   const oneOff = S.projectTasks(p.id).filter((x) => !x.repeat);
   return `<section class="card ms-card ${m.done ? 'ms-done' : ''}">
     <div class="ms-head">
-      ${auto
-        ? `<span class="check square ${m.done ? 'on' : ''}" style="--c:var(--accent)" aria-label="${m.done ? 'Done' : 'Not done yet'}">${m.done ? icon('check') : ''}</span>`
-        : `<button class="check square" style="--c:var(--accent)" data-action="mini-toggle" data-kind="project" data-owner="${p.id}" data-mid="${m.id}"
-            aria-label="${m.done ? 'Mark not done' : 'Mark done'}">${m.done ? icon('check') : ''}</button>`}
+      <button class="check square" style="--c:var(--accent)" data-action="mini-toggle" data-kind="project" data-owner="${p.id}" data-mid="${m.id}"
+        aria-label="${m.done ? 'Mark not done' : 'Mark done'}">${m.done ? icon('check') : ''}</button>
       <div class="ms-title">
         <span class="ms-name">${icon('flag')} ${esc(m.title)}</span>
         <span class="task-meta">${m.date ? `${D.formatShort(m.date)}${!m.done ? ` · ${D.countdown(D.todayKey(), m.date)}` : ''}` : 'No date'}${list.length ? ` · ${done}/${list.length} tasks` : ''}</span>
@@ -195,7 +192,7 @@ function milestoneBlock(p, m) {
       <button class="icon-btn sm muted" data-action="mini-delete" data-kind="project" data-owner="${p.id}" data-mid="${m.id}" aria-label="Delete milestone">${icon('x')}</button>
     </div>
     ${list.length ? progressBar(done / list.length, sectionColor(p.sectionId)) : ''}
-    ${list.length ? `<ul class="task-list">${list.map((t) => taskWithSteps(t, isOpen(t, oneOff))).join('')}</ul>` : ''}
+    ${list.length ? `<ul class="task-list">${list.map(projectTaskRow).join('')}</ul>` : ''}
     ${addTaskForm(p, m.id)}
   </section>`;
 }
@@ -207,7 +204,10 @@ function addTaskForm(p, milestoneId) {
   </form>`;
 }
 
-// A project task, with a fold-out checklist of its steps underneath.
+// A project task: just the task (tap it to edit, or to add it to your schedule).
+const projectTaskRow = (t) => taskRow(t, t.date, { showDate: true, inProject: true });
+
+// (Older: a project task with a fold-out checklist of steps. Not used for now.)
 function taskWithSteps(t, open) {
   const sp = S.stepProgress(t);
   const color = sectionColor(t.sectionId);

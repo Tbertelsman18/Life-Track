@@ -867,6 +867,8 @@ body.beach #scene {
 body.beach #scene svg { width: 100%; height: auto; display: block; }
 body.beach { --bg: #f4e9d8; --accent: #0e7f72; --accent-2: #14998a; --accent-soft: rgba(14, 127, 114, 0.11); --sel-bg: rgba(14, 127, 114, 0.12); }
 html.beach { background: #f4e9d8; }
+html.beach[data-scene="mountains"] { background: #e8edf1; }
+html.beach[data-scene="forest"] { background: #e9efe2; }
 body.beach { background: transparent; }
 
 /* Frosted-glass cards */
@@ -899,6 +901,8 @@ body.beach .fab { background: var(--accent); }
 
 @media (prefers-color-scheme: dark) {
   html.beach { background: #15130f; }
+  html.beach[data-scene="mountains"] { background: #101318; }
+  html.beach[data-scene="forest"] { background: #10140f; }
   body.beach { --bg: #15130f; --accent: #4fd1bf; --accent-2: #6fdccc; --accent-soft: rgba(79, 209, 191, 0.14); --accent-ink: #082420; }
   body.beach #scene { filter: brightness(0.62) saturate(0.95); }
   body.beach .card, body.beach .summary, body.beach .group, body.beach .week-day, body.beach .m-cell { background-color: rgba(24, 27, 26, 0.84); }

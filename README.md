@@ -26,7 +26,7 @@ All six stages are built:
 - **Coming up** (Day page): events, and tasks with a date, show here ahead of time based on their **Tell me ahead** setting (1 day to 1 month). For tasks it's under More options.
 - **Not finished:** tasks left undone on earlier days show at the top of today with **Move to today**, **Not completed** (kept for tracking in More → Pushed off & not completed) or delete.
 - **Ideas** (More → Ideas, or **+ → Idea**): quick thoughts, separate from tasks.
-- **Beach background:** an illustrated beach that follows the time of day (sunrise, sunny, sunset, night). Turn it off in More → Settings. Drawn in `js/scene.js`.
+- **Background** (More → Settings → Background): Beach, Mountains or Forest, illustrated, with a sky that follows the time of day (sunrise, daytime, sunset, night). Or Off. Drawn in `js/scene.js`.
 - **Kansas basketball games** (More → Settings): loads the Jayhawks schedule from ESPN and adds each game as an event (shows on game day, in Week/Month, and in Coming up the day before). Code in `js/ku.js`.
 - **Info** (More → Info): things to keep handy, like codes and phone numbers.
 - **Backup:** **More → Back up to Files** (top of More). Every Sunday the Home screen shows a reminder banner until you back up that day.
@@ -46,7 +46,7 @@ All six stages are built:
 | `js/projects.js` | Projects tab |
 | `js/goals.js` | Goals tab |
 | `js/lists.js` | Lists and Info |
-| `js/scene.js` | The beach background that changes with the time of day |
+| `js/scene.js` | The Beach / Mountains / Forest background that changes with the time of day |
 | `js/ku.js` | Kansas basketball schedule from ESPN |
 | `js/more.js` | More tab: Sunday Planning, History, Most Pushed Off, Settings, Backup |
 | `js/vendor/Sortable.min.js` | Drag-to-reorder library (SortableJS, MIT license) |

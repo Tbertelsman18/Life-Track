@@ -5,11 +5,11 @@ import * as S from './store.js';
 import { ui, esc, icon, go, pct, progressBar, sectionColor, pageHeader, toast } from './ui.js';
 import { openSectionSheet, openTaskSheet, openIdeaSheet } from './forms.js';
 import { taskRow, forecastList } from './home.js';
-import { paintScene } from './scene.js';
+import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.28 (Nov 8)';
+export const APP_VERSION = '1.29 (Nov 8)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {
@@ -75,11 +75,15 @@ export function renderMore() {
         <div class="setting-label">Default view when the app opens</div>
         <div class="seg">${viewSeg}</div>
       </div>
+      <div class="group pad">
+        <div class="setting-label">Background</div>
+        <div class="seg">${SCENES.map(([id, label]) => `
+          <button class="seg-btn ${currentScene() === id ? 'on' : ''}" data-action="set-scene" data-scene="${id}">${label}</button>`).join('')}</div>
+        <p class="hint left">The sky follows the time of day: sunrise, daytime, sunset and night.</p>
+      </div>
       <ul class="group">
         <li><button class="row" data-action="edit-daily-check">${icon('check')}<span class="row-label">Recurring tasks</span>
           <span class="row-value">${data.dailyCheck.items.length}</span>${icon('chev-right')}</button></li>
-        <li><label class="row">${icon('sun')}<span class="row-label">Beach background</span>
-          <input type="checkbox" class="switch" data-action="toggle-beach" ${data.settings.beach !== false ? 'checked' : ''}></label></li>
         <li><label class="row">🏀<span class="row-label">Kansas basketball games<small class="row-sub">${esc(kuStatus(data.settings))}</small></span>
           <input type="checkbox" class="switch" data-action="toggle-ku" ${data.settings.kuGames ? 'checked' : ''}></label></li>
       </ul>
@@ -434,7 +438,7 @@ export const moreActions = {
   'history-by': (el) => { ui.historyBy = el.dataset.by; },
   'edit-section': (el) => { openSectionSheet(el.dataset.id); return false; },
   'add-section': () => { openSectionSheet(null); return false; },
-  'toggle-beach': () => { S.setSetting('beach', S.getData().settings.beach === false); paintScene(); return false; },
+  'set-scene': (el) => { S.setSetting('scene', el.dataset.scene); paintScene(); return false; },
   'toggle-ku': () => {
     if (S.getData().settings.kuGames) {
       S.setSettings({ kuGames: false, kuSyncedAt: null, kuError: null, kuCount: null });

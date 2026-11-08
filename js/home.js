@@ -367,6 +367,8 @@ function renderDailyCheck(key) {
   const items = S.routinesOn(key);
   const doneCount = items.filter((i) => S.isChecked(i.id, key)).length;
   const editing = ui.checkEdit;
+  // Only show the box on days that have a recurring task (or while editing the list).
+  if (!items.length && !editing) return '';
 
   let body;
   if (!everything.length && !editing) {
@@ -444,7 +446,8 @@ function renderReview(key) {
   const answered = REFLECT.filter(([id]) => (r[id] || '').trim()).length;
   const isToday = key === D.todayKey();
   const evening = new Date().getHours() >= 17;
-  const open = ui.reviewOpen ?? (answered > 0 || !isToday || evening);
+  // Stays closed until you tap it open.
+  const open = ui.reviewOpen ?? false;
   const sub = answered === REFLECT.length ? 'Done. Nice reflection.'
     : answered ? `${answered} of ${REFLECT.length} answered`
     : isToday ? (evening ? 'How did today go?' : 'Fill this in tonight') : 'Not filled in';

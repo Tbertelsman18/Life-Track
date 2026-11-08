@@ -1,7 +1,7 @@
 // Kansas men's basketball games. When switched on (More → Settings), the app
-// loads the Jayhawks' schedule from ESPN and keeps each game as an Event, so
-// games show on their day, in Week and Month view, and in "Coming up" the day
-// before. The schedule is refreshed at most every 6 hours while the app is open.
+// loads the Jayhawks' schedule from ESPN and keeps each game as an Event. Games
+// are not Important and have no early heads-up: they show on game day, in Week
+// view and as a dot on the small calendar. Refreshed at most every 6 hours.
 
 import * as S from './store.js';
 

@@ -11,7 +11,7 @@ import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, 
 import { renderLists, renderListPage, renderInfoPage, afterLists, listActions, listForms } from './lists.js';
 import { startScene, paintScene } from './scene.js';
 import { startKU } from './ku.js';
-import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeating, renderIdeas, moreActions } from './more.js';
+import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeating, renderIdeas, moreActions, moreForms } from './more.js';
 
 const actions = {
   ...homeActions, ...projectActions, ...goalActions, ...listActions, ...moreActions,
@@ -27,7 +27,7 @@ const actions = {
     return false;
   },
 };
-const forms = { ...homeForms, ...projectForms, ...goalForms, ...listForms };
+const forms = { ...homeForms, ...projectForms, ...goalForms, ...listForms, ...moreForms };
 
 // ---------------------------------------------------------------- drawing
 function renderPage(p) {
@@ -55,6 +55,7 @@ function render() {
   else if (ui.tab === 'projects') main.innerHTML = renderProjects();
   else if (ui.tab === 'goals') main.innerHTML = renderGoals();
   else if (ui.tab === 'lists') main.innerHTML = renderLists();
+  else if (ui.tab === 'ideas') main.innerHTML = renderIdeas();
   else main.innerHTML = renderMore();
   window.scrollTo(0, y);
 
@@ -124,6 +125,16 @@ document.addEventListener('input', (e) => {
 document.addEventListener('change', (e) => {
   const ta = e.target.closest('[data-notes]');
   if (ta) S.updateProject(ta.dataset.id, { notes: ta.value }, { worked: true });
+});
+
+// Ideas bar: Return saves (Shift+Return for a new line), and the box grows to fit
+document.addEventListener('keydown', (e) => {
+  const ta = e.target.closest('[data-form="idea-add"] textarea');
+  if (ta && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ta.form.requestSubmit(); }
+});
+document.addEventListener('input', (e) => {
+  const ta = e.target.closest('[data-form="idea-add"] textarea');
+  if (ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
 });
 
 document.addEventListener('keydown', (e) => {

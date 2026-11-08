@@ -25,7 +25,8 @@ All six stages are built:
 - **Daily reflection** (replaces the End-of-day review): four short questions at the end of the day. Answers save as you type.
 - **Coming up** (Day page): events, and tasks with a date, show here ahead of time based on their **Tell me ahead** setting (1 day to 1 month). For tasks it's under More options.
 - **Not finished:** tasks left undone on earlier days show at the top of today with **Move to today**, **Not completed** (kept for tracking in More → Pushed off & not completed) or delete.
-- **Ideas** (More → Ideas, or **+ → Idea**): quick thoughts, separate from tasks.
+- **Ideas** tab: jot a thought in the bar at the top and tap Save. Separate from tasks.
+- **Tabs:** Planner · Projects · Ideas · Settings (Settings is the old More screen).
 - **Background** (More → Settings → Background): Beach, Mountains or Forest, illustrated, with a sky that follows the real sunrise and sunset times in St. Louis (sunrise, daytime, sunset, night). Or Off. Drawn in `js/scene.js`.
 - **Kansas basketball games** (More → Settings): loads the Jayhawks schedule from ESPN and adds each game as an event. Games are not Important and have no early heads-up: they show on game day, in Week view and as a dot on the small calendar. Code in `js/ku.js`.
 - **Info** (More → Info): things to keep handy, like codes and phone numbers.

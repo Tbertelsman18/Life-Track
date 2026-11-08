@@ -9,7 +9,7 @@ import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.35 (Nov 8)';
+export const APP_VERSION = '1.36 (Nov 9)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {
@@ -41,7 +41,7 @@ export function renderMore() {
   const backupNote = lb ? `Last backup: ${lbDays === 0 ? 'today' : lbDays === 1 ? 'yesterday' : `${lbDays} days ago`}` : 'No backup yet';
 
   return `
-    <header class="page-header"><h1>More</h1></header>
+    <header class="page-header"><h1>Settings</h1></header>
     <div class="view-body">
       <h3 class="group-label first">Backup</h3>
       <ul class="group">
@@ -58,8 +58,6 @@ export function renderMore() {
         <li><button class="row" data-action="open-history">${icon('chart')}<span class="row-label">History</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-repeating">${icon('repeat')}<span class="row-label">Repeating tasks</span>
           <span class="row-value">${S.repeatingTasks().length}</span>${icon('chev-right')}</button></li>
-        <li><button class="row" data-action="open-ideas">${icon('sun')}<span class="row-label">Ideas</span>
-          <span class="row-value">${data.ideas.length}</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-info">${icon('info')}<span class="row-label">Info</span>
           <span class="row-value">${data.info.length}</span>${icon('chev-right')}</button></li>
         <li><button class="row" data-action="open-pushed">${icon('turtle')}<span class="row-label">Pushed off &amp; not completed</span>${icon('chev-right')}</button></li>
@@ -145,7 +143,7 @@ export function renderPlanning() {
   const projects = S.projectsIn('active').slice(0, 3);
 
   return `
-    ${pageHeader('Sunday Planning', { backLabel: 'More' })}
+    ${pageHeader('Sunday Planning', { backLabel: 'Settings' })}
     <div class="view-body">
       <button class="btn wide primary" data-action="plan-next-week">${icon('calendar')} Plan next week day by day</button>
       <section class="card">
@@ -252,7 +250,7 @@ export function renderHistory() {
   const avg = Math.round((total / weeks.length) * 10) / 10;
 
   return `
-    ${pageHeader('History', { backLabel: 'More' })}
+    ${pageHeader('History', { backLabel: 'Settings' })}
     <div class="view-body">
       <section class="card">
         <h2 class="card-title">Tasks completed per week</h2>
@@ -318,7 +316,7 @@ function pushedList(limit) {
 export function renderRepeating() {
   const list = S.repeatingTasks();
   return `
-    ${pageHeader('Repeating tasks', { backLabel: 'More' })}
+    ${pageHeader('Repeating tasks', { backLabel: 'Settings' })}
     <div class="view-body">
       <p class="hint">Everything that repeats, like "Film weekly video" every Tuesday. Tap a day to turn it on or off. Tap the name to change the time or anything else.</p>
       ${list.length ? list.map((t) => {
@@ -342,7 +340,7 @@ export function renderRepeating() {
 export function renderPushed() {
   const missed = S.missedTasks(30);
   return `
-    ${pageHeader('Pushed off & not completed', { backLabel: 'More' })}
+    ${pageHeader('Pushed off & not completed', { backLabel: 'Settings' })}
     <div class="view-body">
       <section class="card">
         <h2 class="card-title">Not completed · last 30 days <span class="count">${missed.length}</span></h2>
@@ -362,18 +360,22 @@ export function renderPushed() {
     </div>`;
 }
 
+// The Ideas tab: a quick bar to jot an idea down, then all your ideas, newest first.
 export function renderIdeas() {
   const ideas = S.getData().ideas;
   return `
-    ${pageHeader('Ideas', { backLabel: 'More' })}
+    <header class="page-header"><h1>Ideas</h1></header>
     <div class="view-body">
-      <button class="btn wide primary" data-action="new-idea">${icon('plus')} New idea</button>
+      <form class="card idea-bar" data-form="idea-add">
+        <textarea name="text" rows="1" placeholder="Jot down an idea…" enterkeyhint="done"></textarea>
+        <button class="btn primary" type="submit">Save</button>
+      </form>
       ${ideas.length ? `<ul class="info-list">${ideas.map((i) => `
         <li><button class="info-card" data-action="edit-idea" data-id="${i.id}">
           <span class="info-body">${esc(i.text)}</span>
           <span class="task-meta">${esc(D.formatShort(D.keyOfISO(i.createdAt)))}</span>
         </button></li>`).join('')}</ul>`
-      : '<p class="empty">Ideas that pop into your head. Add one here, or with <b>+ → Idea</b>.</p>'}
+      : '<p class="empty">Ideas that pop into your head. Type one in the bar above and tap Save. They stay here, separate from your tasks.</p>'}
     </div>`;
 }
 
@@ -422,9 +424,19 @@ function doImport() {
   input.click();
 }
 
+export const moreForms = {
+  'idea-add': (form) => {
+    const text = form.text.value.trim();
+    if (!text) return;
+    S.addIdea(text);
+    toast('Idea saved');
+    setTimeout(() => document.querySelector('[data-form="idea-add"] textarea')?.focus(), 0);
+  },
+};
+
 export const moreActions = {
   'open-planning': () => { ui.tab = 'more'; go({ type: 'planning' }); return false; },
-  'open-ideas': () => { ui.tab = 'more'; go({ type: 'ideas' }); return false; },
+  'open-ideas': () => { ui.tab = 'ideas'; ui.page = null; return true; },
   'new-idea': () => { openIdeaSheet(); return false; },
   'edit-idea': (el) => { openIdeaSheet({ id: el.dataset.id }); return false; },
   'missed-undo': (el) => { S.unmarkMissed(el.dataset.id); toast('Moved to today'); return false; },

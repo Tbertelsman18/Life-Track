@@ -33,7 +33,7 @@ function renderListIndex() {
 
 // Info as its own page, opened from More.
 export function renderInfoPage() {
-  return `${pageHeader('Info', { backLabel: 'More' })}
+  return `${pageHeader('Info', { backLabel: 'Settings' })}
     <div class="view-body">
       <p class="hint">Things you want to keep handy, like a code, a phone number or a name.</p>
       ${renderInfo()}

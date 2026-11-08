@@ -19,8 +19,11 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
 - **Tasks** are one-off things planned for a day. Adding a task should stay simple: name, date (defaults to the
   day being viewed), optional time, Section (chips) and the Important switch (right under the name). Everything else lives under "More options".
 - Unfinished one-time tasks from earlier days get a "Not finished" box on today: Move to today, Not completed
-  (task leaves the lists but is tracked: `missed` flag, shown in More → Pushed off & not completed) or Delete.
-- **Ideas** (More → Ideas, or + → Idea) are quick thoughts kept separate from tasks.
+  (task leaves the lists but is tracked: `missed` flag, shown in Settings → Pushed off & not completed) or Delete.
+- **Ideas** have their own tab (quick-add bar at the top), kept separate from tasks. The + button is only for
+  Task / Event / Recurring.
+- Bottom tabs: **Planner** (was Home) · **Projects** · **Ideas** · **Settings** (was More; still holds backup,
+  planning, history, sections, info, etc.). Internally the tabs are still 'home' and 'more'.
 - **Projects**: project tasks are planned inside the project itself. Tying projects into the daily task list is a
   future feature; the owner wants to design it before anything changes on the Projects screens.
 - **Goals** are switched off for now (`GOALS_ON` in `js/store.js`); the data is kept. The owner may bring it back later.

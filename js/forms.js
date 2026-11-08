@@ -51,7 +51,6 @@ function kindSwitch(kind) {
     <button type="button" class="seg-btn ${kind === 'task' ? 'on' : ''}" data-kind="task">Task</button>
     <button type="button" class="seg-btn ${kind === 'event' ? 'on' : ''}" data-kind="event">Event</button>
     <button type="button" class="seg-btn ${kind === 'daily' ? 'on' : ''}" data-kind="daily">Recurring</button>
-    <button type="button" class="seg-btn ${kind === 'idea' ? 'on' : ''}" data-kind="idea">Idea</button>
   </div>`;
 }
 
@@ -560,7 +559,7 @@ export function openIdeaSheet({ id = null, defaults = {} } = {}) {
       ${sheetTop(idea ? 'Edit Idea' : 'New', { saveLabel: 'Save' })}
       ${idea ? '' : kindSwitch('idea')}
       <textarea class="title-input grow idea-input" name="title" rows="3" placeholder="What's the idea?" required>${esc(idea ? idea.text : defaults.title || '')}</textarea>
-      <p class="hint">Ideas are kept in <b>More → Ideas</b>, separate from your tasks.</p>
+      <p class="hint">Ideas are kept in the <b>Ideas</b> tab, separate from your tasks.</p>
       ${idea ? `<button type="button" class="btn danger wide" data-act="delete">Delete idea</button>` : ''}
     </form>`);
   const form = $('#idea-form');

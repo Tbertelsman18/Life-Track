@@ -72,7 +72,7 @@ function defaultData() {
 
   task:     { id, title, notes, date|null, time|null, sectionId, projectId, goalId, atWork,
               done, doneAt, repeat: null | { days:[0-6], until, doneDates:{date:iso}, skips:[] },
-              pushes:[{from,to,at}], seriesId?, createdAt }
+              pushes:[{from,to,at}], seriesId?, steps?:[{id,title,done}], createdAt }
   event:    { id, title, date, endDate|null, time|null, sectionId, lead:'1w', notes }
   project:  { id, title, notes, sectionId, status, targetDate, state:'active'|'radar'|'done',
               order, miniGoals:[{id,title,date,done}], lastWorkedAt, completedAt, startedAt, createdAt }
@@ -315,6 +315,48 @@ export function toggleDone(id, key) {
     t.doneAt = t.done ? nowISO() : null;
   }
   touchProject(t.projectId);
+  save();
+}
+
+// ---------- Steps: a small checklist inside a one-time task (used for project tasks).
+// When every step is checked the task is done; unchecking a step reopens it.
+export function stepProgress(t) {
+  const steps = (t && t.steps) || [];
+  return { done: steps.filter((s) => s.done).length, total: steps.length };
+}
+
+function syncTaskWithSteps(t) {
+  const { done, total } = stepProgress(t);
+  if (!total) return;
+  const all = done === total;
+  if (all !== t.done) { t.done = all; t.doneAt = all ? nowISO() : null; }
+}
+
+export function addStep(taskId, title) {
+  const t = getTask(taskId);
+  if (!t || !title.trim()) return;
+  t.steps = t.steps || [];
+  t.steps.push({ id: uid(), title: title.trim(), done: false });
+  syncTaskWithSteps(t);
+  touchProject(t.projectId);
+  save();
+}
+
+export function toggleStep(taskId, stepId) {
+  const t = getTask(taskId);
+  const s = t && (t.steps || []).find((x) => x.id === stepId);
+  if (!s) return;
+  s.done = !s.done;
+  syncTaskWithSteps(t);
+  touchProject(t.projectId);
+  save();
+}
+
+export function deleteStep(taskId, stepId) {
+  const t = getTask(taskId);
+  if (!t) return;
+  t.steps = (t.steps || []).filter((x) => x.id !== stepId);
+  syncTaskWithSteps(t);
   save();
 }
 

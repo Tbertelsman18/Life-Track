@@ -70,6 +70,7 @@ function projectCard(p, i) {
   const prog = S.projectProgress(p.id);
   const sortable = p.state !== 'done';
   const days = S.daysInProgress(p);
+  const nextTask = p.state === 'active' ? S.projectTasks(p.id).find((t) => !t.repeat && !t.done) : null;
   const nextMini = (p.miniGoals || []).filter((m) => !m.done && m.date).sort((a, b) => a.date.localeCompare(b.date))[0];
   return `
     <li class="proj-card" data-id="${p.id}" style="--c:${sectionColor(p.sectionId)}">
@@ -85,7 +86,7 @@ function projectCard(p, i) {
         <span class="task-meta">
           ${p.state === 'done' ? `Finished ${p.completedAt ? D.formatShort(D.keyOfISO(p.completedAt)) : ''}` : `Worked on ${ago(p.lastWorkedAt)}`}
           ${p.targetDate && p.state !== 'done' ? ` · Target ${D.formatMonthDay(p.targetDate)}` : ''}
-          ${nextMini ? ` · Next: ${esc(nextMini.title)} ${D.formatMonthDay(nextMini.date)}` : ''}
+          ${nextMini ? ` · Next: ${esc(nextMini.title)} ${D.formatMonthDay(nextMini.date)}` : nextTask ? ` · Next up: ${esc(nextTask.title)}` : ''}
         </span>
       </button>
     </li>`;
@@ -124,16 +125,16 @@ export function renderProjectPage(id) {
           <h2 class="card-title">Tasks ${prog.total ? `<span class="count">${prog.done}/${prog.total}</span>` : ''}</h2>
         </div>
         ${prog.total ? progressBar(prog.done / prog.total, sectionColor(p.sectionId)) : ''}
-        ${oneOff.length ? `<ul class="task-list">${oneOff.map((t) => taskRow(t, t.date, { showDate: true })).join('')}</ul>` : ''}
+        ${oneOff.length ? `<ul class="task-list">${oneOff.map((t) => taskWithSteps(t, isOpen(t, oneOff))).join('')}</ul>` : ''}
         ${repeating.length ? `<h3 class="sub-label">${icon('repeat')} Repeating</h3>
           <ul class="task-list">${repeating.map(repeatRow).join('')}</ul>` : ''}
         <form class="inline-add" data-form="project-task" data-id="${p.id}">
-          <input name="title" placeholder="Add a task" autocomplete="off">
+          <input name="title" placeholder="Add a task (e.g. Recall guide)" autocomplete="off">
           <input name="date" type="date" aria-label="Date (optional)" class="date-mini">
           <button class="link strong" type="submit">Add</button>
         </form>
         <button class="add-inline" data-action="project-task-full" data-id="${p.id}">${icon('repeat')} Add a repeating task or set a time…</button>
-        <p class="hint left">Tap any task to change its day, time or repeat days. Dated tasks also show on your calendar.</p>
+        <p class="hint left">Each task can have its own steps. When all its steps are checked, the task is done. Tap a task's name to change its day or time.</p>
       </section>
 
       <section class="card">
@@ -159,6 +160,43 @@ export function renderProjectPage(id) {
         <button class="btn danger wide" data-action="delete-project" data-id="${p.id}">Delete project</button>
       </div>
     </div>`;
+}
+
+// Which tasks show their steps. Until you open or close one yourself, the
+// first unfinished task with steps is open (your "next up").
+function isOpen(t, list) {
+  ui.openSteps = ui.openSteps || {};
+  if (t.id in ui.openSteps) return ui.openSteps[t.id];
+  const next = list.find((x) => !x.done && x.steps && x.steps.length);
+  return Boolean(next && next.id === t.id);
+}
+
+// A project task, with a fold-out checklist of its steps underneath.
+function taskWithSteps(t, open) {
+  const sp = S.stepProgress(t);
+  const color = sectionColor(t.sectionId);
+  const toggle = sp.total
+    ? `<button class="steps-toggle" data-action="steps-open" data-id="${t.id}" aria-expanded="${open}">
+        <span class="chev-toggle ${open ? 'open' : ''}">${icon('chev-right')}</span>
+        <span class="steps-bar">${progressBar(sp.done / sp.total, color)}</span>
+        <span class="steps-count">${sp.done}/${sp.total} steps</span></button>`
+    : (open ? '' : `<button class="steps-toggle add" data-action="steps-open" data-id="${t.id}">${icon('plus')} Add steps</button>`);
+  const steps = open ? `
+      <ul class="tsteps">
+        ${(t.steps || []).map((s) => `
+        <li class="tstep ${s.done ? 'done' : ''}">
+          <button class="check square sm" data-action="step-toggle" data-id="${t.id}" data-step="${s.id}"
+            aria-label="${s.done ? 'Mark not done' : 'Mark done'}">${s.done ? icon('check') : ''}</button>
+          <span class="tstep-title">${esc(s.title)}</span>
+          <button class="icon-btn sm muted" data-action="step-delete" data-id="${t.id}" data-step="${s.id}" aria-label="Delete step">${icon('x')}</button>
+        </li>`).join('')}
+      </ul>
+      <form class="inline-add step-add" data-form="step-add" data-id="${t.id}">
+        <input name="title" placeholder="Add a step" autocomplete="off">
+        <button class="link strong" type="submit">Add</button>
+      </form>` : '';
+  return `${taskRow(t, t.date, { showDate: true, inProject: true })}
+    <li class="steps-wrap" style="--c:${color}">${toggle}${steps}</li>`;
 }
 
 // A repeating task: shows its days; tap to change them.
@@ -238,6 +276,16 @@ export const projectActions = {
     openTaskSheet({ date: D.todayKey(), defaults: { projectId: p.id, sectionId: p.sectionId } });
     return false;
   },
+  'steps-open': (el) => {
+    const t = S.getTask(el.dataset.id);
+    const list = S.projectTasks(t.projectId).filter((x) => !x.repeat);
+    ui.openSteps = ui.openSteps || {};
+    const opening = !isOpen(t, list);
+    ui.openSteps[t.id] = opening;
+    if (opening && !(t.steps || []).length) setTimeout(() => document.querySelector(`[data-form="step-add"][data-id="${t.id}"] input`)?.focus(), 0);
+  },
+  'step-toggle': (el) => { S.toggleStep(el.dataset.id, el.dataset.step); return false; },
+  'step-delete': (el) => { S.deleteStep(el.dataset.id, el.dataset.step); return false; },
   'project-done': (el) => { finishProject(S.getProject(el.dataset.id)); return false; },
   'project-move': (el) => {
     S.moveProject(el.dataset.id, el.dataset.to);
@@ -270,6 +318,15 @@ export const projectActions = {
 };
 
 export const projectForms = {
+  'step-add': (form) => {
+    const id = form.dataset.id;
+    const title = form.title.value.trim();
+    if (!title) return;
+    ui.openSteps = ui.openSteps || {};
+    ui.openSteps[id] = true;
+    S.addStep(id, title);
+    setTimeout(() => document.querySelector(`[data-form="step-add"][data-id="${id}"] input`)?.focus(), 0);
+  },
   'project-task': (form) => {
     const p = S.getProject(form.dataset.id);
     const title = form.title.value.trim();

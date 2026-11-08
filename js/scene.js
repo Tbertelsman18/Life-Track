@@ -30,10 +30,10 @@ const LAND = {
     night: { far: '#2e3d6d', mid: '#1f2c55', near: '#131c3c', snow: '#c9d4f2', lake: ['#16244f', '#2c4580'], pine: '#0a0f22', ground: '#bcc4d2' },
   },
   forest: {
-    sunrise: { hillFar: '#8a86a8', hillNear: '#5f6b7c', treeFar: '#4c5968', treeNear: '#2c3440', leaf: '#4a5d5a', leafLight: '#6d8072', trunk: '#3a3238', grass: '#56685a', ground: '#b9bfae' },
-    day: { hillFar: '#8cc79a', hillNear: '#5aa46c', treeFar: '#3c8a52', treeNear: '#1f6a3c', leaf: '#2f8a4a', leafLight: '#55b468', trunk: '#6b4a2f', grass: '#4d9a52', ground: '#a9cf95' },
-    sunset: { hillFar: '#9a6a7a', hillNear: '#5e4a5c', treeFar: '#3f3044', treeNear: '#211a27', leaf: '#4a3a40', leafLight: '#6e5250', trunk: '#2a1f26', grass: '#4a3b3f', ground: '#c9b2a4' },
-    night: { hillFar: '#24345a', hillNear: '#1a2945', treeFar: '#122036', treeNear: '#0a1424', leaf: '#132a33', leafLight: '#1f3c44', trunk: '#0c1420', grass: '#14263a', ground: '#8f9ca6' },
+    sunrise: { hillFar: '#9b8fb2', treeFar: '#6f6f8e', treeMid: '#45506a', treeNear: '#262c3c', grass: '#55635a', ground: '#b7bba9' },
+    day: { hillFar: '#9ccfb0', treeFar: '#5f9e7c', treeMid: '#2f7a52', treeNear: '#174d33', grass: '#4f8f4f', ground: '#a3c48f' },
+    sunset: { hillFar: '#a8778a', treeFar: '#7a5470', treeMid: '#47304b', treeNear: '#211727', grass: '#4a3b42', ground: '#c8b1a3' },
+    night: { hillFar: '#2a3a63', treeFar: '#1f2d50', treeMid: '#14203a', treeNear: '#0a1222', grass: '#13233a', ground: '#8e9ba6' },
   },
 };
 
@@ -150,34 +150,42 @@ function mountains(p, sunX, sunY, sunColor, low) {
     ${[[30, 430, 150], [70, 400, 96], [362, 420, 104]].map(([x, y, h]) => pine(x, y, h, p.pine)).join('')}`;
 }
 
-// A round leafy tree: trunk plus a cloud of overlapping circles. (x, base y, height)
-function leafy(x, y, h, p) {
-  const r = h * 0.3;
-  const cy = y - h * 0.62;
-  return `<rect x="${x - h * 0.04}" y="${y - h * 0.45}" width="${h * 0.08}" height="${h * 0.45}" fill="${p.trunk}"/>
-    <circle cx="${x - r * 0.7}" cy="${cy + r * 0.25}" r="${r * 0.8}" fill="${p.leaf}"/>
-    <circle cx="${x + r * 0.7}" cy="${cy + r * 0.25}" r="${r * 0.8}" fill="${p.leaf}"/>
-    <circle cx="${x}" cy="${cy - r * 0.2}" r="${r}" fill="${p.leaf}"/>
-    <circle cx="${x - r * 0.3}" cy="${cy - r * 0.45}" r="${r * 0.45}" fill="${p.leafLight}"/>`;
+// A slim evergreen: a tall, narrow spire with layered, slightly drooping
+// branches. (x, base y, height)
+function slimPine(x, y, h, color) {
+  const w = h * 0.2;
+  const tiers = 4;
+  let d = '';
+  for (let k = 0; k < tiers; k++) {
+    const top = y - h + (h * 0.78 * k) / tiers;
+    const bot = y - h * 0.08 - (h * 0.66 * (tiers - 1 - k)) / tiers * 0.55;
+    const half = w * (0.55 + (0.45 * (k + 1)) / tiers);
+    d += `M${x},${top} L${x + half},${bot} L${x + half * 0.45},${bot - h * 0.03} L${x},${bot + h * 0.01} L${x - half * 0.45},${bot - h * 0.03} L${x - half},${bot}Z `;
+  }
+  return `<rect x="${x - h * 0.025}" y="${y - h * 0.12}" width="${h * 0.05}" height="${h * 0.12}" fill="${color}"/><path d="${d}" fill="${color}"/>`;
+}
+
+// A row of pines along a hill. Trees in the middle are shorter so the sun stays in view.
+function pineRow(from, to, step, baseY, minH, maxH, color, seed) {
+  let out = '';
+  for (let x = from, i = 0; x <= to; x += step, i++) {
+    const wobble = ((i * 37 + seed) % 13) / 12;               // 0–1, fixed per tree
+    const center = 0.6 + 0.4 * Math.min(1, Math.abs(x - 200) / 140); // lower near the middle
+    const h = (minH + (maxH - minH) * wobble) * center;
+    out += slimPine(x + ((i * 5 + seed) % 4) - 2, baseY + ((i * 7 + seed) % 5), h, color);
+  }
+  return out;
 }
 
 function forest(p) {
   const H = HORIZON;
-  // Far hills: a soft treeline of round tops with a few pines
-  const farTops = [140, 158, 176, 194, 212, 230, 248, 266, 284].map((x, i) =>
-    `<circle cx="${x}" cy="${206 + (i % 3) * 3}" r="${11 + (i % 2) * 3}" fill="${p.treeFar}"/>`).join('');
   return `
-    <path d="M0 ${H} L0 214 C 70 196, 140 210, 200 204 S 330 192, 400 210 L400 ${H}Z" fill="${p.hillFar}"/>
-    ${farTops}
-    ${[[130, 214, 36], [300, 214, 34]].map(([x, y, h]) => pine(x, y, h, p.treeFar)).join('')}
-    <path d="M0 ${H + 10} L0 236 C 80 222, 170 240, 240 232 S 350 220, 400 232 L400 ${H + 10}Z" fill="${p.hillNear}"/>
-    ${[[110, 244, 44], [150, 248, 36], [254, 246, 40], [292, 244, 46]].map(([x, y, h]) => leafy(x, y, h, p)).join('')}
-    <path d="M0 ${H + 2} C 90 ${H - 8}, 180 ${H + 8}, 260 ${H} S 360 ${H - 6}, 400 ${H} L400 ${H + 90} L0 ${H + 90}Z" fill="${p.grass}"/>
+    <path d="M0 ${H} L0 212 C 70 198, 140 210, 200 206 S 330 196, 400 210 L400 ${H}Z" fill="${p.hillFar}"/>
+    ${pineRow(-4, 404, 9, 214, 18, 32, p.treeFar, 3)}
+    ${pineRow(-6, 406, 14, 244, 30, 56, p.treeMid, 7)}
+    <path d="M0 ${H - 4} C 90 ${H - 12}, 180 ${H + 2}, 260 ${H - 6} S 360 ${H - 10}, 400 ${H - 4} L400 ${H + 90} L0 ${H + 90}Z" fill="${p.grass}"/>
     <rect y="${H + 88}" width="400" height="${480 - H - 88}" fill="url(#ground)"/>
-    ${[[16, 300, 120], [52, 296, 92], [350, 298, 112], [386, 302, 96]].map(([x, y, h]) => pine(x, y, h * 1.25, p.treeNear)).join('')}
-    ${[[88, 300, 70], [318, 300, 66]].map(([x, y, h]) => leafy(x, y, h, { ...p, leaf: p.treeNear, leafLight: p.leaf })).join('')}
-    <path d="M0 ${H + 84} C 20 ${H + 66}, 50 ${H + 66}, 64 ${H + 84} C 76 ${H + 70}, 100 ${H + 72}, 108 ${H + 86} L0 ${H + 92}Z
-             M300 ${H + 86} C 310 ${H + 70}, 336 ${H + 68}, 346 ${H + 82} C 358 ${H + 66}, 390 ${H + 66}, 400 ${H + 80} L400 ${H + 92}Z" fill="${p.treeNear}"/>`;
+    ${[[8, 340, 170], [40, 330, 132], [70, 322, 96], [334, 324, 104], [366, 332, 140], [398, 340, 176]].map(([x, y, h]) => slimPine(x, y, h, p.treeNear)).join('')}`;
 }
 
 // ---------------------------------------------------------------- drawing

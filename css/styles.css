@@ -928,3 +928,10 @@ body.beach .view-body > p.empty.big { align-self: stretch; padding: 18px; }
 }
 .row-sub { display: block; font-size: 13px; color: var(--muted); margin-top: 1px; }
 label.row { cursor: pointer; }
+
+/* Background picker: four equal buttons */
+.scene-seg .seg-btn { min-width: 0; font-size: 14px; letter-spacing: -0.01em; padding: 0 2px; }
+.scene-seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.scene-seg .seg-btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scene-seg { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; }
+.scene-seg .seg-btn { font-size: 15px; }

@@ -9,7 +9,7 @@ import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.33 (Nov 8)';
+export const APP_VERSION = '1.34 (Nov 8)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {
@@ -77,7 +77,7 @@ export function renderMore() {
       </div>
       <div class="group pad">
         <div class="setting-label">Background</div>
-        <div class="seg">${SCENES.map(([id, label]) => `
+        <div class="seg scene-seg">${SCENES.map(([id, label]) => `
           <button class="seg-btn ${currentScene() === id ? 'on' : ''}" data-action="set-scene" data-scene="${id}">${label}</button>`).join('')}</div>
         <p class="hint left">The sky follows the time of day: sunrise, daytime, sunset and night.</p>
       </div>

@@ -1101,3 +1101,56 @@ body.beach .proj-feature, .proj-feature { background: var(--card) !important; -w
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
   border: 3px solid var(--accent); border-radius: 4px;
 }
+
+/* ================================================================ Beach sea life (daytime)
+   Dolphins swim right→left and leap; every 34s a shark leaps, misses and belly-flops. */
+#scene .sea-life g { transform-box: fill-box; }
+#scene .dol-run { animation: dolRun 17s linear infinite; }
+#scene .dol-jump { animation: dolJump 3.4s ease-in-out infinite; transform-origin: center; }
+@keyframes dolRun { from { transform: translateX(440px); } to { transform: translateX(-80px); } }
+@keyframes dolJump {
+  0%   { transform: translateY(14px) rotate(32deg); opacity: 0; }
+  6%   { opacity: 1; }
+  22%  { transform: translateY(-44px) rotate(0deg); }
+  40%  { transform: translateY(14px) rotate(-34deg); opacity: 1; }
+  44%, 100% { transform: translateY(18px) rotate(-34deg); opacity: 0; }
+}
+#scene .shark-fin, #scene .shark-leap, #scene .shark-splash, #scene .shark-stars, #scene .shark-nope { opacity: 0; animation-duration: 34s; animation-iteration-count: infinite; }
+#scene .shark-fin { animation-name: sharkFin; animation-timing-function: linear; }
+@keyframes sharkFin {
+  0%, 60% { transform: translateX(-40px); opacity: 0; }
+  61% { opacity: 1; }
+  74% { transform: translateX(165px); opacity: 1; }
+  75%, 100% { transform: translateX(170px); opacity: 0; }
+}
+#scene .shark-leap { animation-name: sharkLeap; transform-origin: center; }
+@keyframes sharkLeap {
+  0%, 74.5% { transform: translate(0, 14px) rotate(-35deg); opacity: 0; }
+  75% { transform: translate(0, 10px) rotate(-35deg); opacity: 1; }
+  79% { transform: translate(30px, -54px) rotate(-5deg); opacity: 1; }
+  81% { transform: translate(48px, -48px) rotate(25deg); }
+  83.5% { transform: translate(64px, 2px) rotate(80deg); opacity: 1; }
+  84%, 100% { transform: translate(66px, 10px) rotate(85deg); opacity: 0; }
+}
+#scene .shark-splash { animation-name: sharkSplash; transform-origin: center bottom; }
+@keyframes sharkSplash {
+  0%, 83.5% { transform: scale(0.2); opacity: 0; }
+  84.5% { transform: scale(1.15); opacity: 1; }
+  88% { transform: scale(1); opacity: 0.8; }
+  91%, 100% { transform: scale(0.6); opacity: 0; }
+}
+#scene .shark-stars { animation-name: sharkStars; transform-origin: center; }
+@keyframes sharkStars {
+  0%, 85% { transform: rotate(0deg); opacity: 0; }
+  86% { opacity: 1; }
+  93% { transform: rotate(360deg); opacity: 1; }
+  95%, 100% { transform: rotate(420deg); opacity: 0; }
+}
+#scene .shark-nope { animation-name: sharkNope; }
+@keyframes sharkNope {
+  0%, 85% { transform: translateY(14px); opacity: 0; }
+  87% { transform: translateY(0); opacity: 1; }
+  96% { transform: translateY(0); opacity: 1; }
+  98%, 100% { transform: translateY(14px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { #scene .sea-life { display: none; } }

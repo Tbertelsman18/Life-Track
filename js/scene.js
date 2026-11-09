@@ -123,7 +123,7 @@ function snowCap(px, py, lx, ly, rx, ry, color, f = 0.46) {
 }
 
 // ---------------------------------------------------------------- scenes
-function beach(p, sunX, sunY, sunColor, low) {
+function beach(p, sunX, sunY, sunColor, low, phase) {
   const H = HORIZON;
   const shimmer = sunY < H - 4
     ? [0, 1, 2, 3, 4].map((i) => `<rect x="${sunX - (26 - i * 4)}" y="${H + 6 + i * 9}" width="${52 - i * 8}" height="2.4" rx="1.2" fill="${sunColor}" opacity="${(low ? 0.75 : 0.5) - i * 0.1}"/>`).join('')
@@ -132,10 +132,57 @@ function beach(p, sunX, sunY, sunColor, low) {
     <path d="M250 ${H} C 280 ${H - 22}, 310 ${H - 30}, 336 ${H - 18} S 380 ${H - 8}, 400 ${H - 12} L400 ${H}Z" fill="${p.island}"/>
     <rect y="${H}" width="400" height="70" fill="url(#water)"/>
     ${shimmer}
+    ${phase === 'day' ? seaLife(H) : ''}
     <path d="M0 ${H + 58} C 80 ${H + 50}, 160 ${H + 64}, 240 ${H + 56} S 360 ${H + 50}, 400 ${H + 56} L400 ${H + 62} C 330 ${H + 58}, 250 ${H + 70}, 160 ${H + 66} S 40 ${H + 60}, 0 ${H + 66}Z" fill="${p.shore}" opacity="0.8"/>
     <rect y="${H + 62}" width="400" height="${480 - H - 62}" fill="url(#ground)"/>
     <path d="M8 480 C 20 400, 44 292, 80 190 L89 193 C 56 294, 36 400, 26 480Z" fill="${p.trunk}"/>
     ${fronds(84, 188, p.palm)}`;
+}
+
+// ---------------------------------------------------------------- sea life
+// Daytime beach only: dolphins leaping across the water, and every so often a
+// shark that leaps at one, misses completely and belly-flops. (CSS animations
+// in styles.css: .dol-run / .dol-jump / .shark-*.)
+const DOLPHIN = `
+  <path d="M0,0 C8,-9 26,-11 38,-5 C42,-3 45,0 46,2 L53,-5 L51,3 L55,10 L46,6 C36,9 18,10 6,6 L-3,5 C-4,3 -2,1 0,0 Z" fill="#5a86b0"/>
+  <path d="M8,4 C18,8 34,7 44,4 C34,9 18,10 8,6Z" fill="#cfe3f2"/>
+  <path d="M21,-9 L27,-19 L31,-8 Z" fill="#4c76a0"/>
+  <path d="M18,5 L22,12 L26,6 Z" fill="#4c76a0"/>
+  <circle cx="6" cy="-1" r="1.4" fill="#1c2b3a"/>
+  <path d="M-2,3 C2,5 6,5 9,3" stroke="#1c2b3a" stroke-width="0.9" fill="none" stroke-linecap="round"/>`;
+
+const SHARK = `
+  <path d="M0,0 C14,-15 52,-18 74,-7 L86,-19 L84,-2 L91,10 L74,5 C52,14 16,13 0,0 Z" fill="#6f7c8a"/>
+  <path d="M6,3 C22,10 50,11 70,5 C50,14 22,13 6,6Z" fill="#e6ebef"/>
+  <path d="M34,-12 L42,-28 L48,-11 Z" fill="#5f6b78"/>
+  <path d="M-1,1 L14,-4 L13,6 Z" fill="#7a2531"/>
+  <path d="M1,0 L3,-3 L5,0 L7,-3 L9,0 L11,-3 L13,0 M2,3 L4,5 L6,3 L8,5 L10,3 L12,5" stroke="#fff" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
+  <circle cx="16" cy="-6" r="2" fill="#fff"/><circle cx="16.6" cy="-6" r="1" fill="#1c2b3a"/>`;
+
+function seaLife(H) {
+  const y = H + 9; // the dolphins' "water line", just under the horizon so it shows above the cards
+  const dolphin = (dur, delay, jump, scale) => `
+    <g transform="translate(0,${y})"><g class="dol-run" style="animation-duration:${dur}s;animation-delay:${delay}s">
+      <g class="dol-jump" style="animation-duration:${jump}s;animation-delay:${delay}s"><g transform="scale(${scale})">${DOLPHIN}</g></g>
+    </g></g>`;
+  return `<g class="sea-life">
+    ${dolphin(17, 0, 3.4, 0.85)}${dolphin(21, -7, 4.1, 0.7)}${dolphin(25, -15, 3.8, 0.78)}
+    <g transform="translate(0,${y + 4})"><g class="shark-fin"><path d="M0,0 L9,-15 L20,0 Z" fill="#5f6b78"/><path d="M-6,1 Q10,-3 26,1" stroke="#fff" stroke-width="1.4" fill="none" opacity="0.8"/></g></g>
+    <g transform="translate(160,${y})"><g class="shark-leap"><g transform="scale(0.85)">${SHARK}</g></g></g>
+    <g transform="translate(232,${y + 2})"><g class="shark-splash">
+      <ellipse cx="0" cy="0" rx="22" ry="5" fill="#fff" opacity="0.9"/>
+      <path d="M-16,-2 L-22,-16 M-6,-4 L-8,-22 M6,-4 L9,-21 M16,-2 L23,-15" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    </g></g>
+    <g transform="translate(232,${y - 26})"><g class="shark-stars">
+      <text x="-14" y="0" font-size="9">⭐</text><text x="4" y="-6" font-size="8">💫</text><text x="10" y="6" font-size="8">⭐</text>
+    </g></g>
+    <g transform="translate(292,${y - 2})"><g class="shark-nope">
+      <g transform="scale(0.75)">${DOLPHIN}</g>
+      <g transform="translate(-6,-34)"><rect x="0" y="0" width="58" height="20" rx="10" fill="#fff"/>
+        <path d="M14,19 L10,27 L22,19 Z" fill="#fff"/>
+        <text x="29" y="14" font-size="11" font-weight="700" text-anchor="middle" fill="#1c2b3a" font-family="-apple-system, sans-serif">Nope! 😂</text></g>
+    </g></g>
+  </g>`;
 }
 
 function mountains(p, sunX, sunY, sunColor, low) {
@@ -258,7 +305,7 @@ function sceneSVG(name, now) {
       <ellipse cx="170" cy="${cy}" rx="32" ry="7"/><ellipse cx="186" cy="${cy - 6}" rx="16" ry="7"/>
     </g>`;
   const water = p.sea || p.lake || ['#000', '#000'];
-  const land = name === 'beach' ? beach(p, sunX, sunY, sky.sun, low)
+  const land = name === 'beach' ? beach(p, sunX, sunY, sky.sun, low, phase)
     : name === 'mountains' ? mountains(p, sunX, sunY, sky.sun, low)
     : forest(p);
 

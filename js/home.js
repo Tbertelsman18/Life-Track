@@ -132,7 +132,7 @@ function renderDay() {
   parts.push(renderDailyCheck(ui.date)); // shows on every day
   parts.push(renderDayTasks(ui.date));
   parts.push(renderUnscheduled());
-  if (ui.date <= today) parts.push(renderReview(ui.date));
+  // Daily reflection is switched off for now (renderReview is kept; answers stay saved)
   return parts.join('');
 }
 

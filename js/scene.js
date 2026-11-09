@@ -61,22 +61,25 @@ function sunTimes(date) {
 }
 
 const MIN = 60000;
+const GLOW = 30 * MIN; // how long the sunrise/sunset colors last on each side of the sun crossing the horizon
 // Which part of the day it is, and how far the sun (or moon) is across the sky (0–1).
 function skyNow(now) {
   const today = sunTimes(now);
   const rise = today.rise.getTime(), set = today.set.getTime(), t0 = now.getTime();
   const across = (a, b) => Math.min(1, Math.max(0, (t0 - a) / (b - a)));
-  if (t0 >= rise - 40 * MIN && t0 < rise + 60 * MIN) return { phase: 'sunrise', t: across(rise, set) };
-  if (t0 >= rise + 60 * MIN && t0 < set - 60 * MIN) return { phase: 'day', t: across(rise, set) };
-  if (t0 >= set - 60 * MIN && t0 < set + 30 * MIN) return { phase: 'sunset', t: across(rise, set) };
+  // Colors match the real sky: sunrise/sunset glow from 30 min before to 30 min after
+  // (it's dark about 30 min after sunset), bright daytime in between.
+  if (t0 >= rise - GLOW && t0 < rise + GLOW) return { phase: 'sunrise', t: across(rise, set) };
+  if (t0 >= rise + GLOW && t0 < set - GLOW) return { phase: 'day', t: across(rise, set) };
+  if (t0 >= set - GLOW && t0 < set + GLOW) return { phase: 'sunset', t: across(rise, set) };
   // Night: the moon crosses from after dusk to before dawn
   let dusk, dawn;
   if (t0 >= set) {
     const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
-    dusk = set + 30 * MIN; dawn = sunTimes(tomorrow).rise.getTime() - 40 * MIN;
+    dusk = set + GLOW; dawn = sunTimes(tomorrow).rise.getTime() - GLOW;
   } else {
     const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-    dusk = sunTimes(yesterday).set.getTime() + 35 * MIN; dawn = rise - 40 * MIN;
+    dusk = sunTimes(yesterday).set.getTime() + GLOW; dawn = rise - GLOW;
   }
   return { phase: 'night', t: across(dusk, dawn) };
 }
@@ -360,6 +363,6 @@ export function paintScene() {
 
 export function startScene() {
   paintScene();
-  setInterval(paintScene, 5 * 60 * 1000);
+  setInterval(paintScene, 2 * 60 * 1000); // the sun moves every 2 minutes
   document.addEventListener('visibilitychange', () => { if (!document.hidden) paintScene(); });
 }

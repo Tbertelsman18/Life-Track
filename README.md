@@ -30,7 +30,7 @@ All six stages are built:
 - **Background** (More → Settings → Background): Beach, Mountains or Forest, illustrated, with a sky that follows the real sunrise and sunset times in St. Louis (sunrise, daytime, sunset, night). Or Off. Drawn in `js/scene.js`.
 - **Kansas basketball games** (More → Settings): loads the Jayhawks schedule from ESPN and adds each game as an event. Games are not Important and have no early heads-up: they show on game day, in Week view and as a dot on the small calendar. Code in `js/ku.js`.
 - **Info** (More → Info): things to keep handy, like codes and phone numbers.
-- **Backup:** **More → Back up to Files** (top of More). Every Sunday the Home screen shows a reminder banner until you back up that day.
+- **Backup:** **Settings → Back up to Files** (top of Settings).
 
 ## Files
 

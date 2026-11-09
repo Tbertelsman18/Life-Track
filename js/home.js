@@ -128,15 +128,6 @@ function renderDay() {
   const parts = [];
 
   if (isToday) parts.push(renderSummary(today));
-  if (isToday && D.weekday(today) === 0) {
-    parts.push(`<button class="banner" data-action="plan-next-week">
-      ${icon('calendar')}<span><b>It's Sunday.</b> Plan next week</span>${icon('chev-right')}</button>`);
-    const lb = S.getData().settings.lastBackup;
-    if (!lb || D.keyOfISO(lb) !== today) {
-      parts.push(`<button class="banner backup" data-action="backup">
-        ${icon('download')}<span><b>Sunday backup.</b> Save a copy to your Files</span>${icon('chev-right')}</button>`);
-    }
-  }
   if (isToday) parts.push(renderOverdue(today));
   parts.push(renderDailyCheck(ui.date)); // shows on every day
   parts.push(renderDayTasks(ui.date));

@@ -83,12 +83,20 @@ export function afterProjects() {
   makeSortable(document.getElementById('proj-sort'), (ids) => S.reorderProjects(ui.projectsTab, ids));
 }
 
+// Project page: press and hold a milestone's ≡ to drag it into a new order
+export function afterProjectPage() {
+  const el = document.getElementById('ms-sort');
+  if (el) makeSortable(el, (ids) => S.reorderMilestones(el.dataset.project, ids));
+}
+
 // ---------------------------------------------------------------- project page
 export function renderProjectPage(id) {
   const p = S.getProject(id);
   if (!p) return pageHeader('Project not found', { backLabel: 'Projects' });
   const prog = S.projectProgress(p.id);
-  const minis = [...(p.miniGoals || [])].sort((a, b) => (a.done - b.done) || (a.date || '9999').localeCompare(b.date || '9999'));
+  // Milestones in the order you dragged them into; finished ones drop to the bottom
+  const all_ = p.miniGoals || [];
+  const minis = [...all_.filter((m) => !m.done), ...all_.filter((m) => m.done)];
   const known = new Set(minis.map((m) => m.id));
   // Tasks not under any milestone (one-time and repeating together)
   const otherTasks = S.projectTasks(p.id).filter((t) => !t.milestoneId || !known.has(t.milestoneId));
@@ -109,7 +117,7 @@ export function renderProjectPage(id) {
           Then add the tasks for each one right inside it.</p>`}
       </section>
 
-      ${minis.map((m) => milestoneBlock(p, m)).join('')}
+      <div class="ms-list" id="ms-sort" data-project="${p.id}">${minis.map((m) => milestoneBlock(p, m)).join('')}</div>
 
       ${otherTasks.length || !minis.length ? `<section class="card ms-card">
         <h2 class="card-title">${minis.length ? 'Other tasks' : 'Tasks'} ${countOf(otherTasks)}</h2>
@@ -156,10 +164,11 @@ function milestoneBlock(p, m) {
   const all = S.milestoneTasks(p.id, m.id);
   const list = all.filter((t) => !t.repeat); // one-time tasks count toward progress
   const done = list.filter((t) => t.done).length;
-  return `<section class="card ms-card ${m.done ? 'ms-done' : ''}">
+  return `<section class="card ms-card ${m.done ? 'ms-done' : ''}" data-id="${m.id}">
     <div class="ms-head">
       <button class="check square" style="--c:var(--accent)" data-action="mini-toggle" data-kind="project" data-owner="${p.id}" data-mid="${m.id}"
         aria-label="${m.done ? 'Mark not done' : 'Mark done'}">${m.done ? icon('check') : ''}</button>
+      <span class="drag ms-drag" aria-label="Drag to reorder">${icon('drag')}</span>
       <button class="ms-title" data-action="ms-edit" data-owner="${p.id}" data-mid="${m.id}" aria-label="Edit milestone">
         <span class="ms-name">${icon('flag')} ${esc(m.title)}</span>
         <span class="task-meta">${m.date ? `${D.formatShort(m.date)}${!m.done ? ` · ${D.countdown(D.todayKey(), m.date)}` : ''}` : ''}${m.date && list.length ? ' · ' : ''}${list.length ? `${done}/${list.length} tasks` : (m.date ? '' : 'Tap to rename or add a date')}</span>
@@ -185,7 +194,7 @@ function addTaskForm(p, milestoneId) {
     <input name="title" placeholder="${milestoneId ? 'Add a task to this milestone' : 'Add a task'}" autocomplete="off">
     <button class="link strong" type="submit">Add</button>
   </form>
-  <button class="add-inline" data-action="project-task-full" data-id="${p.id}" data-milestone="${milestoneId || ''}">${icon('repeat')} Add a repeating task</button>`;
+  ${milestoneId ? `<button class="add-inline" data-action="project-task-full" data-id="${p.id}" data-milestone="${milestoneId}">${icon('repeat')} Add a repeating task</button>` : ''}`;
 }
 
 // A project task: just the task (tap it to edit, or to add it to your schedule).

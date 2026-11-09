@@ -890,6 +890,17 @@ export function toggleMiniGoal(owner, mid) {
   save();
 }
 
+// Put a project's milestones in the order given (ids from the screen, top to bottom).
+export function reorderMilestones(projectId, ids) {
+  const p = getProject(projectId);
+  if (!p) return;
+  const byId = new Map((p.miniGoals || []).map((m) => [m.id, m]));
+  const ordered = ids.map((id) => byId.get(id)).filter(Boolean);
+  const rest = (p.miniGoals || []).filter((m) => !ids.includes(m.id));
+  p.miniGoals = [...ordered, ...rest];
+  save();
+}
+
 export function updateMiniGoal(owner, mid, changes) {
   const m = (owner.miniGoals || []).find((x) => x.id === mid);
   if (m) Object.assign(m, changes);

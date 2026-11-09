@@ -6,7 +6,7 @@ import * as S from './store.js';
 import { ui, hooks, $, back, closeSheet } from './ui.js';
 import { openAddSheet } from './forms.js';
 import { renderHome, afterHome, homeActions, homeForms } from './home.js';
-import { renderProjects, renderProjectPage, afterProjects, projectActions, projectForms } from './projects.js';
+import { renderProjects, renderProjectPage, afterProjects, afterProjectPage, projectActions, projectForms } from './projects.js';
 import { renderGoals, renderYearlyPage, renderQuarterlyPage, renderQuarterPlan, goalActions, goalForms, afterGoals } from './goals.js';
 import { renderLists, renderListPage, renderInfoPage, afterLists, listActions, listForms } from './lists.js';
 import { startScene, paintScene } from './scene.js';
@@ -61,6 +61,7 @@ function render() {
 
   if (!ui.page && ui.tab === 'home') afterHome();
   if (!ui.page && ui.tab === 'projects') afterProjects();
+  if (ui.page?.type === 'project') afterProjectPage();
   if (ui.tab === 'lists') afterLists();
   if (ui.page?.type === 'yearly') afterGoals();
 

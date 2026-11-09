@@ -1001,3 +1001,8 @@ label.row { cursor: pointer; }
 .toggle-field > .imp-label small { white-space: normal; }
 .toggle-field > .switch { flex: none; }
 button.ms-title { text-align: left; padding: 2px 0; }
+
+/* Milestones can be dragged into order */
+.ms-list { display: flex; flex-direction: column; gap: 14px; }
+.ms-head .ms-drag { order: 3; margin-left: auto; height: 40px; }
+.ms-card.drag-chosen { box-shadow: 0 10px 28px rgba(0,0,0,0.18); transform: scale(1.01); }

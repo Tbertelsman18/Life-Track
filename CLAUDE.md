@@ -29,7 +29,8 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
 - **Reordering** (Planner tasks, Projects list, milestones): tap **Reorder** to show the ≡ handles, drag right away
   (no long press: it made iPhone highlight text), tap **Done**. Handles are hidden otherwise.
 - Project cards on the Projects list are clean white rows: name, small gray status, › (no #rank numbers, no
-  colored stripes or colored pills, no dates). Radar and Ideas rows use the same style. No "drag to
+  colored stripes or colored pills, no dates). Active projects are bigger "feature" cards (folder badge, serif
+  title, status underneath) so they look important; Radar and Ideas stay simple rows. No "drag to
   reorder" hint text anywhere: the owner knows how.
 - Unfinished one-time tasks from earlier days get a "Not finished" box on today: Move to today, Not completed
   (task leaves the lists but is tracked: `missed` flag, shown in Settings → Pushed off & not completed) or Delete.

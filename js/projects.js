@@ -68,11 +68,12 @@ function projectCard(p, i) {
   // A clean row: the project's name, a small gray status, and ›. Order = priority.
   const sortable = p.state !== 'done';
   return `
-    <li class="proj-card" data-id="${p.id}">
+    <li class="proj-card ${p.state === 'active' ? 'proj-feature' : ''}" data-id="${p.id}">
       ${sortable ? `<span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>` : ''}
       <button class="proj-main" data-action="open-project" data-id="${p.id}">
-        <span class="proj-title">${esc(p.title)}</span>
-        ${p.state === 'active' ? `<span class="proj-status">${esc(p.status)}</span>` : ''}
+        ${p.state === 'active' ? `<span class="proj-badge">${icon('folder')}</span>
+        <span class="proj-text"><span class="proj-title">${esc(p.title)}</span><span class="proj-status">${esc(p.status)}</span></span>`
+        : `<span class="proj-title">${esc(p.title)}</span>`}
         <span class="proj-chev">${icon('chev-right')}</span>
       </button>
     </li>`;

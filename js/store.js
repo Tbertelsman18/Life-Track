@@ -890,6 +890,12 @@ export function toggleMiniGoal(owner, mid) {
   save();
 }
 
+export function updateMiniGoal(owner, mid, changes) {
+  const m = (owner.miniGoals || []).find((x) => x.id === mid);
+  if (m) Object.assign(m, changes);
+  save();
+}
+
 export function deleteMiniGoal(owner, mid) {
   owner.miniGoals = (owner.miniGoals || []).filter((x) => x.id !== mid);
   // Its tasks stay in the project, under "Other tasks"

@@ -17,7 +17,11 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   3P tests at work, fish tank water change on Mondays). They use the same **Sections** as tasks (so a later weekly score per section can cover both). They are *not* part of a project. Keep them separate
   from Projects; don't fold them into project features.
 - **Tasks** are one-off things planned for a day. Adding a task should stay simple: name, date (defaults to the
-  day being viewed), optional time, Section (chips) and the Important switch (right under the name). Everything else lives under "More options".
+  day being viewed), optional time, Section (chips) and the Important switch (right under the name). "More options"
+  holds only repeat, tell me ahead and notes. No dropdowns: the owner finds them clunky (prefer tap chips).
+- **Project tasks** use their own short form (`openProjectTaskSheet`): name, Milestone chips, Add to my schedule
+  (reveals date/time), notes. Repeat days only for a repeating task. No Section, Important or More options.
+  Adding a milestone = just its name; tap a milestone to rename it, give it a date, or delete it.
 - Unfinished one-time tasks from earlier days get a "Not finished" box on today: Move to today, Not completed
   (task leaves the lists but is tracked: `missed` flag, shown in Settings → Pushed off & not completed) or Delete.
 - **Ideas** live in Projects as a fourth segment (Active · Radar · Ideas · Done; quick-add bar at the top), kept separate from tasks. The + button is only for

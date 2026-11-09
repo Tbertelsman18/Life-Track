@@ -1000,3 +1000,4 @@ label.row { cursor: pointer; }
 .toggle-field > .imp-label { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; row-gap: 0; }
 .toggle-field > .imp-label small { white-space: normal; }
 .toggle-field > .switch { flex: none; }
+button.ms-title { text-align: left; padding: 2px 0; }

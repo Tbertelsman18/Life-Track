@@ -115,8 +115,7 @@ export function renderProjectPage(id) {
       <section class="card">
         <form class="inline-add top-line" data-form="project-mini" data-id="${p.id}">
           <span class="ms-plus">${icon('flag')}</span>
-          <input name="title" placeholder="Milestone" autocomplete="off">
-          <input name="date" type="date" aria-label="Date (optional)" class="date-mini">
+          <input name="title" placeholder="Add a milestone" autocomplete="off">
           <button class="link strong" type="submit">Add</button>
         </form>
         ${minis.length ? '' : `<p class="hint left">Start with the milestones: the big things you need to reach this goal.
@@ -174,11 +173,10 @@ function milestoneBlock(p, m) {
     <div class="ms-head">
       <button class="check square" style="--c:var(--accent)" data-action="mini-toggle" data-kind="project" data-owner="${p.id}" data-mid="${m.id}"
         aria-label="${m.done ? 'Mark not done' : 'Mark done'}">${m.done ? icon('check') : ''}</button>
-      <div class="ms-title">
+      <button class="ms-title" data-action="ms-edit" data-owner="${p.id}" data-mid="${m.id}" aria-label="Edit milestone">
         <span class="ms-name">${icon('flag')} ${esc(m.title)}</span>
-        <span class="task-meta">${m.date ? `${D.formatShort(m.date)}${!m.done ? ` · ${D.countdown(D.todayKey(), m.date)}` : ''}` : 'No date'}${list.length ? ` · ${done}/${list.length} tasks` : ''}</span>
-      </div>
-      <button class="icon-btn sm muted" data-action="mini-delete" data-kind="project" data-owner="${p.id}" data-mid="${m.id}" aria-label="Delete milestone">${icon('x')}</button>
+        <span class="task-meta">${m.date ? `${D.formatShort(m.date)}${!m.done ? ` · ${D.countdown(D.todayKey(), m.date)}` : ''}` : ''}${m.date && list.length ? ' · ' : ''}${list.length ? `${done}/${list.length} tasks` : (m.date ? '' : 'Tap to rename or add a date')}</span>
+      </button>
     </div>
     ${list.length ? progressBar(done / list.length, sectionColor(p.sectionId)) : ''}
     ${taskListOf(all)}
@@ -293,6 +291,26 @@ function finishProject(p) {
 const ownerOf = (el) => (el.dataset.kind === 'project' ? S.getProject(el.dataset.owner) : S.getQuarterly(el.dataset.owner));
 
 export const projectActions = {
+  // Tap a milestone's name: rename it, give it a date, or delete it
+  'ms-edit': (el) => {
+    const p = S.getProject(el.dataset.owner);
+    const m = p && (p.miniGoals || []).find((x) => x.id === el.dataset.mid);
+    if (!m) return false;
+    openFieldsSheet({
+      title: 'Milestone',
+      fields: [
+        { name: 'title', label: 'Name', big: true, required: true, value: m.title },
+        { name: 'date', label: 'Date (optional)', type: 'date', value: m.date || '' },
+      ],
+      onSave: (v) => { S.updateMiniGoal(p, m.id, { title: v.title, date: v.date || null }); },
+      onDelete: () => {
+        if (!confirm(`Delete milestone "${m.title}"? Its tasks stay in the project under "Other tasks".`)) return false;
+        S.deleteMiniGoal(p, m.id);
+      },
+      deleteLabel: 'Delete milestone',
+    });
+    return false;
+  },
   'projects-tab': (el) => { ui.projectsTab = el.dataset.tabId; },
   'new-project': () => { openProjectForm(null, ui.projectsTab === 'radar' ? 'radar' : 'active'); return false; },
   'open-project': (el) => { ui.tab = 'projects'; go({ type: 'project', id: el.dataset.id }); return false; },
@@ -375,7 +393,7 @@ export const projectForms = {
     const p = S.getProject(form.dataset.id);
     const title = form.title.value.trim();
     if (!p || !title) return;
-    S.addMiniGoal(p, title, form.date.value);
+    S.addMiniGoal(p, title, null); // tap the milestone later to give it a date
     refocus('project-mini');
   },
 };

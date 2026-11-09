@@ -94,6 +94,10 @@ function wireSectionChips(box, selected, onPick) {
 
 export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwitch = false, showMore = false } = {}) {
   const t = id ? S.getTask(id) : null;
+  // Project tasks get their own short form (unless it's one day of a repeating task on the Planner)
+  if ((t ? t.projectId : defaults.projectId) && !(t && t.repeat && date)) {
+    return openProjectTaskSheet({ t, defaults, repeating: showMore || Boolean(t && t.repeat) });
+  }
   const data = S.getData();
   const v = t ? { ...t } : {
     title: '', notes: '', date, time: null, projectId: null, milestoneId: null, goalId: null, atWork: false,
@@ -155,25 +159,15 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       </div>
 
       <button type="button" class="more-toggle" data-act="more" aria-expanded="false">
-        More options <small>tell me ahead, repeat, project${notesUp ? '' : ', notes'}</small> ${icon('chev-down')}
+        More options <small>repeat, tell me ahead${notesUp ? '' : ', notes'}</small> ${icon('chev-down')}
       </button>
 
       <div class="more-opts" hidden>
 
-      <div class="field-group">
-        <label class="field">
-          <span>Project</span>
-          <select name="projectId">${projectOptions(v.projectId)}</select>
-        </label>
-        <label class="field milestone-field" ${v.projectId && (S.getProject(v.projectId)?.miniGoals || []).length ? '' : 'hidden'}>
-          <span>Milestone</span>
-          <select name="milestoneId">${milestoneOptions(v.projectId, v.milestoneId)}</select>
-        </label>
-        ${S.GOALS_ON ? `<label class="field">
+      ${S.GOALS_ON ? `<div class="field-group"><label class="field">
           <span>Goal / step</span>
           <select name="goalId">${goalOptions(v.goalId)}</select>
-        </label>` : ''}
-      </div>
+        </label></div>` : ''}
 
       <div class="field-group">
         <div class="field col">
@@ -254,11 +248,6 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
   tleadHint();
 
   // The Milestone choice follows the chosen project
-  form.projectId.addEventListener('change', () => {
-    const pid = form.projectId.value;
-    form.milestoneId.innerHTML = milestoneOptions(pid, null);
-    form.querySelector('.milestone-field').hidden = !(pid && (S.getProject(pid)?.miniGoals || []).length);
-  });
 
   if (projTask) {
     form.onSched.addEventListener('change', () => {
@@ -324,8 +313,8 @@ export function openTaskSheet({ id = null, date = null, defaults = {}, allowSwit
       date: dateVal,
       time: form.time.value || null,
       sectionId: form.sectionId.value || null,
-      projectId: form.projectId.value || null,
-      milestoneId: form.projectId.value ? (form.milestoneId.value || null) : null,
+      projectId: v.projectId || null,
+      milestoneId: v.milestoneId || null,
       goalId: form.goalId ? (form.goalId.value || null) : (v.goalId || null),
       atWork: Boolean(v.atWork),
       important: form.important ? form.important.checked : Boolean(v.important), // project tasks have no Important switch
@@ -583,6 +572,98 @@ export function openDailySheet({ id = null, date = D.todayKey(), defaults = {} }
     const start = every === 2 ? (startWeek === 'next' ? nextMon : thisMon) : null;
     if (item) S.updateCheckItem(item.id, { title, days: [...days], sectionId, every, start });
     else { S.addCheckItem(title, [...days], sectionId, every, start); toast('Added to Recurring tasks'); }
+    closeSheet();
+  });
+}
+
+// ---------------------------------------------------------------- project task
+// A short form for tasks inside a project: name, milestone, notes and an
+// "Add to my schedule" switch. Section comes from the project; repeat days only
+// for a repeating task.
+function openProjectTaskSheet({ t = null, defaults = {}, repeating = false }) {
+  const v = t ? { ...t } : { title: '', notes: '', date: null, time: null, milestoneId: null, repeat: null, ...defaults };
+  const p = S.getProject(v.projectId);
+  const miles = (p && p.miniGoals) || [];
+  let milestoneId = v.milestoneId && miles.some((m) => m.id === v.milestoneId) ? v.milestoneId : '';
+  const repeatDays = new Set(v.repeat ? v.repeat.days : []);
+
+  openSheet(`
+    <form class="sheet-form" id="ptask-form" autocomplete="off">
+      ${sheetTop(t ? 'Edit Task' : (repeating ? 'New Repeating Task' : 'New Task'))}
+      <textarea class="title-input grow" name="title" rows="1" enterkeyhint="done" placeholder="What needs to get done?" required>${esc(v.title)}</textarea>
+
+      ${miles.length ? `<div class="field-group"><div class="field col">
+        <span>Milestone</span>
+        <div class="cat-chips ms-chips">
+          ${miles.map((m) => `<button type="button" class="chip ${milestoneId === m.id ? 'on' : ''}" data-ms="${m.id}">${esc(m.title)}</button>`).join('')}
+          <button type="button" class="chip ${!milestoneId ? 'on' : ''}" data-ms="">None</button>
+        </div>
+      </div></div>` : ''}
+
+      ${repeating ? `<div class="field-group"><div class="field col">
+        <span>Repeat on</span>
+        <div class="day-chips">${D.WEEK_ORDER.map((d) => `
+          <button type="button" class="chip ${repeatDays.has(d) ? 'on' : ''}" data-day="${d}">${D.DAY_NAMES[d].slice(0, 2)}</button>`).join('')}</div>
+      </div></div>` : `<div class="field-group">
+        <label class="field toggle-field">
+          <span class="imp-label">${icon('calendar')} Add to my schedule<small>Off: it stays in the project</small></span>
+          <input type="checkbox" name="onSched" class="switch" ${v.date ? 'checked' : ''}>
+        </label>
+        <div class="sched-fields" ${v.date ? '' : 'hidden'}>
+          <label class="field"><span>Date</span><input type="date" name="date" value="${v.date || ''}"></label>
+          <label class="field"><span>Time <small class="opt">optional</small></span><input type="time" name="time" value="${v.time || ''}"></label>
+        </div>
+      </div>`}
+
+      <label class="field-group">
+        <textarea name="notes" class="grow" rows="2" placeholder="Notes (optional)">${esc(v.notes || '')}</textarea>
+      </label>
+
+      ${t ? `<button type="button" class="btn danger wide" data-act="delete">Delete task</button>` : ''}
+    </form>`);
+
+  const form = $('#ptask-form');
+  if (!t) setTimeout(() => form.title.focus(), 50);
+  const fit = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
+  form.querySelectorAll('textarea.grow').forEach((ta) => { ta.addEventListener('input', () => fit(ta)); requestAnimationFrame(() => fit(ta)); });
+  form.title.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); } });
+
+  form.querySelectorAll('[data-ms]').forEach((b) => b.addEventListener('click', () => {
+    milestoneId = b.dataset.ms;
+    form.querySelectorAll('[data-ms]').forEach((x) => x.classList.toggle('on', x === b));
+  }));
+  form.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => {
+    const d = Number(b.dataset.day);
+    if (repeatDays.has(d)) repeatDays.delete(d); else repeatDays.add(d);
+    b.classList.toggle('on', repeatDays.has(d));
+  }));
+  form.onSched?.addEventListener('change', () => {
+    form.querySelector('.sched-fields').hidden = !form.onSched.checked;
+    if (form.onSched.checked && !form.date.value) form.date.value = D.todayKey();
+  });
+  form.querySelector('[data-act="delete"]')?.addEventListener('click', () => {
+    if (confirm(`Delete "${t.title}"?`)) { S.deleteTask(t.id); closeSheet(); }
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = form.title.value.trim();
+    if (!title) return;
+    let date = null, time = null, repeat = null;
+    if (repeating) {
+      if (!repeatDays.size) { toast('Pick at least one day'); return; }
+      date = v.date || D.todayKey();
+      time = v.time || null;
+      repeat = { days: [...repeatDays].sort(), until: v.repeat?.until || null,
+        doneDates: v.repeat?.doneDates || {}, skips: v.repeat?.skips || [] };
+    } else if (form.onSched.checked) {
+      date = form.date.value || D.todayKey();
+      time = form.time.value || null;
+    }
+    const fields = { title, notes: form.notes.value.trim(), date, time, repeat, milestoneId: milestoneId || null,
+      projectId: v.projectId, sectionId: v.sectionId ?? p?.sectionId ?? null };
+    if (t) S.updateTask(t.id, fields);
+    else S.addTask(fields);
     closeSheet();
   });
 }

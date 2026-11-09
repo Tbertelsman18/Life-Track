@@ -1077,3 +1077,19 @@ body.beach .proj-feature { background-color: rgba(255, 255, 255, 0.94); }
 .proj-list:has(.proj-feature) { gap: 12px; }
 body.beach .proj-feature, .proj-feature { background: var(--card) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (prefers-color-scheme: dark) { body.beach .proj-feature { background: #1c201e !important; } }
+
+/* ================================================================ Month view: make the month stand out */
+/* Days outside this month: grayed-out squares */
+.m-cell.other { opacity: 1; background: var(--fill) !important; }
+.m-cell.other .m-num, .m-cell.other .m-chip { opacity: 0.4; }
+/* This month's days: solid white with dark numbers; past days a little softer */
+.m-cell:not(.other) .m-num { color: var(--text); font-weight: 700; font-size: 14px; }
+.m-cell.past:not(.other) .m-num { color: var(--muted); font-weight: 600; }
+/* Today: solid teal circle on a lightly tinted square */
+.m-cell.today { background: var(--accent-soft) !important; box-shadow: inset 0 0 0 2px var(--accent); }
+.m-cell.today .m-num { background: var(--accent); color: var(--accent-ink) !important; font-weight: 800; width: 28px; height: 28px; line-height: 28px; }
+/* Important items: stronger color so they're easy to spot */
+.m-chip { font-size: 10.5px; line-height: 16px; font-weight: 600;
+  background: color-mix(in srgb, var(--c) 30%, var(--card)); color: color-mix(in srgb, var(--c) 70%, var(--text)); }
+.m-chip.ev { background: var(--c); color: #fff; }
+.m-dow { color: var(--text-2); }

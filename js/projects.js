@@ -58,20 +58,14 @@ export function renderProjects() {
     <header class="page-header"><h1>Projects</h1></header>
     <div class="view-body">
       <div class="seg proj-seg">${tabs}</div>
-      ${ui.projectsTab !== 'done' ? `<p class="hint">${ui.projectsTab === 'active'
-        ? 'Press and hold ☰, then drag to change priority. #1 is your top project.'
-        : 'Projects for later. Start adding milestones and tasks anytime. Drag ☰ to reorder; the top one is next in line.'}</p>` : ''}
       ${body}
       ${ui.projectsTab !== 'done' ? `<button class="btn wide" data-action="new-project">${icon('plus')} New project</button>` : ''}
     </div>`;
 }
 
 function projectCard(p, i) {
-  const prog = S.projectProgress(p.id);
+  // Just the project: its rank and name (and status). Details are inside the project.
   const sortable = p.state !== 'done';
-  const days = S.daysInProgress(p);
-  const nextTask = p.state === 'active' ? S.projectTasks(p.id).find((t) => !t.repeat && !t.done) : null;
-  const nextMini = (p.miniGoals || []).filter((m) => !m.done && m.date).sort((a, b) => a.date.localeCompare(b.date))[0];
   return `
     <li class="proj-card" data-id="${p.id}" style="--c:${sectionColor(p.sectionId)}">
       ${sortable ? `<span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>` : ''}
@@ -80,13 +74,6 @@ function projectCard(p, i) {
           ${sortable ? `<span class="rank">#${i + 1}</span>` : ''}
           <span class="proj-title">${esc(p.title)}</span>
           ${p.state === 'active' ? `<span class="status ${statusClass(p.status)}">${esc(p.status)}</span>` : ''}
-        </span>
-        ${prog.total ? `<span class="proj-prog">${progressBar(prog.done / prog.total, sectionColor(p.sectionId))}<span class="pnum">${prog.done}/${prog.total}</span>${days !== null ? `<span class="pdays">${daysLabel(days)}</span>` : ''}</span>`
-          : days !== null ? `<span class="proj-prog"><span class="pdays solo">${daysLabel(days)}</span></span>` : ''}
-        <span class="task-meta">
-          ${p.state === 'done' ? `Finished ${p.completedAt ? D.formatShort(D.keyOfISO(p.completedAt)) : ''}` : `Worked on ${ago(p.lastWorkedAt)}`}
-          ${p.targetDate && p.state !== 'done' ? ` · Target ${D.formatMonthDay(p.targetDate)}` : ''}
-          ${nextMini ? ` · Next: ${esc(nextMini.title)} ${D.formatMonthDay(nextMini.date)}` : nextTask ? ` · Next up: ${esc(nextTask.title)}` : ''}
         </span>
       </button>
     </li>`;

@@ -22,6 +22,8 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
 - **Project tasks** use their own short form (`openProjectTaskSheet`): name, Milestone chips, Add to my schedule
   (reveals date/time), notes. Repeat days only for a repeating task. No Section, Important or More options.
   Adding a milestone = just its name; tap a milestone to rename it, give it a date, or delete it.
+- Project cards on the Projects list show only rank, name and status (no dates or details). No "drag to
+  reorder" hint text anywhere: the owner knows how.
 - Unfinished one-time tasks from earlier days get a "Not finished" box on today: Move to today, Not completed
   (task leaves the lists but is tracked: `missed` flag, shown in Settings → Pushed off & not completed) or Delete.
 - **Ideas** live in Projects as a fourth segment (Active · Radar · Ideas · Done; quick-add bar at the top), kept separate from tasks. The + button is only for

@@ -247,7 +247,6 @@ function renderDayTasks(key) {
   const tasksCard = `<section class="card">
     <h2 class="card-title">${isToday ? "Today's Tasks" : 'Tasks'} ${rest.length ? `<span class="count">${rest.length}</span>` : ''}</h2>
     ${list('day-sort', rest, open.length ? 'Nothing else today' : done.length ? 'All done. Nice work.' : 'Nothing planned. Tap + to add a task.')}
-    ${open.length > 1 ? `<p class="hint left">Press and hold ${icon('drag')}, then drag to change the order.</p>` : ''}
   </section>`;
 
   if (work.length) out.push(workCard, tasksCard);

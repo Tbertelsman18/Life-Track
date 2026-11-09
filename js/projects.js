@@ -2,7 +2,7 @@
 
 import * as D from './dates.js';
 import * as S from './store.js';
-import { ui, esc, icon, go, back, progressBar, sectionColor, sectionOptions, wireSectionSelect,
+import { ui, esc, icon, go, back, progressBar, sectionColor, sectionOptions, wireSectionSelect, reorderButton,
   pageHeader, makeSortable, toast } from './ui.js';
 import { openFieldsSheet, openTaskSheet } from './forms.js';
 import { taskRow } from './home.js';
@@ -46,12 +46,13 @@ export function renderProjects() {
   let body;
   if (!list.length) {
     body = {
-      active: `<p class="empty big">No active projects yet.<br>Add one, then press and hold ≡ to drag it into priority order (#1 at the top).</p>`,
+      active: `<p class="empty big">No active projects yet.<br>Add one; with two or more, tap Reorder to set priority (#1 at the top).</p>`,
       radar: `<p class="empty big">Projects you want to get done at some point, just not on your top list right now.<br>Each one works like an active project: add milestones and tasks whenever you're ready.</p>`,
       done: `<p class="empty big">Finished projects show up here.</p>`,
     }[ui.projectsTab];
   } else {
-    body = `<ul class="proj-list" id="proj-sort">${list.map((p, i) => projectCard(p, i)).join('')}</ul>`;
+    body = `${list.length > 1 && ui.projectsTab !== 'done' ? `<div class="reorder-row">${reorderButton()}</div>` : ''}
+      <ul class="proj-list" id="proj-sort">${list.map((p, i) => projectCard(p, i)).join('')}</ul>`;
   }
 
   return `
@@ -108,8 +109,8 @@ export function renderProjectPage(id) {
     ${pageHeader(p.title, { backLabel: 'Projects', right: `<button class="link" data-action="edit-project" data-id="${p.id}">Edit</button>` })}
     <div class="view-body">
       <section class="card">
-        <form class="inline-add top-line" data-form="project-mini" data-id="${p.id}">
-          <span class="ms-plus">${icon('flag')}</span>
+        <form class="inline-add top-line add-bar" data-form="project-mini" data-id="${p.id}">
+          <span class="add-bar-plus">${icon('flag')}</span>
           <input name="title" placeholder="Add a milestone" autocomplete="off">
           <button class="link strong" type="submit">Add</button>
         </form>
@@ -117,11 +118,12 @@ export function renderProjectPage(id) {
           Then add the tasks for each one right inside it.</p>`}
       </section>
 
+      ${minis.filter((m) => !m.done).length > 1 ? `<div class="reorder-row">${reorderButton('Reorder milestones')}</div>` : ''}
       <div class="ms-list" id="ms-sort" data-project="${p.id}">${minis.map((m) => milestoneBlock(p, m)).join('')}</div>
 
       ${otherTasks.length || !minis.length ? `<section class="card ms-card">
         <h2 class="card-title">${minis.length ? 'Other tasks' : 'Tasks'} ${countOf(otherTasks)}</h2>
-        ${taskListOf(otherTasks)}
+        ${taskListOf([...otherTasks.filter((t) => t.repeat || !t.done), ...otherTasks.filter((t) => !t.repeat && t.done)])}
         ${addTaskForm(p, null)}
       </section>` : ''}
 
@@ -164,19 +166,28 @@ function milestoneBlock(p, m) {
   const all = S.milestoneTasks(p.id, m.id);
   const list = all.filter((t) => !t.repeat); // one-time tasks count toward progress
   const done = list.filter((t) => t.done).length;
-  return `<section class="card ms-card ${m.done ? 'ms-done' : ''}" data-id="${m.id}">
+  const left = list.length - done;
+  const ready = !m.done && list.length > 0 && left === 0; // all tasks done: ready to check off
+  // Open tasks first, finished ones at the bottom
+  const sorted = [...all.filter((t) => t.repeat || !t.done), ...all.filter((t) => !t.repeat && t.done)];
+  const open = ui.openMs?.[m.id];
+  return `<section class="card ms-card ${m.done ? 'ms-done' : ''} ${ready ? 'ms-ready' : ''}" data-id="${m.id}">
     <div class="ms-head">
-      <button class="check square" style="--c:var(--accent)" data-action="mini-toggle" data-kind="project" data-owner="${p.id}" data-mid="${m.id}"
-        aria-label="${m.done ? 'Mark not done' : 'Mark done'}">${m.done ? icon('check') : ''}</button>
+      <button class="check square ms-check ${!m.done && left > 0 ? 'locked' : ''}" style="--c:var(--good)" data-action="mini-toggle" data-kind="project" data-owner="${p.id}" data-mid="${m.id}"
+        aria-label="${m.done ? 'Mark not done' : left > 0 ? `Finish its ${left} task${left > 1 ? 's' : ''} first` : 'Mark done'}">${m.done ? icon('check') : ''}</button>
       <span class="drag ms-drag" aria-label="Drag to reorder">${icon('drag')}</span>
       <button class="ms-title" data-action="ms-edit" data-owner="${p.id}" data-mid="${m.id}" aria-label="Edit milestone">
         <span class="ms-name">${icon('flag')} ${esc(m.title)}</span>
-        <span class="task-meta">${m.date ? `${D.formatShort(m.date)}${!m.done ? ` · ${D.countdown(D.todayKey(), m.date)}` : ''}` : ''}${m.date && list.length ? ' · ' : ''}${list.length ? `${done}/${list.length} tasks` : (m.date ? '' : 'Tap to rename or add a date')}</span>
+        <span class="task-meta">${m.done ? `<b class="done-badge">${icon('check')} Done</b>${list.length ? ` · ${list.length} task${list.length > 1 ? 's' : ''}` : ''}`
+          : `${m.date ? `${D.formatShort(m.date)} · ${D.countdown(D.todayKey(), m.date)}` : ''}${m.date && list.length ? ' · ' : ''}${list.length ? `${done}/${list.length} tasks` : (m.date ? '' : 'Tap to rename or add a date')}`}
+          ${ready ? ' · <b class="ready">All tasks done: check it off</b>' : ''}</span>
       </button>
     </div>
-    ${list.length ? progressBar(done / list.length, sectionColor(p.sectionId)) : ''}
-    ${taskListOf(all)}
-    ${addTaskForm(p, m.id)}
+    ${m.done
+      ? (all.length ? `<button class="add-inline small" data-action="ms-show" data-mid="${m.id}">${open ? 'Hide tasks' : 'Show tasks'}</button>${open ? taskListOf(sorted) : ''}` : '')
+      : `${list.length ? progressBar(done / list.length, 'var(--good)') : ''}
+    ${taskListOf(sorted)}
+    ${addTaskForm(p, m.id)}`}
   </section>`;
 }
 
@@ -190,11 +201,11 @@ const countOf = (tasks) => {
 };
 
 function addTaskForm(p, milestoneId) {
-  return `<form class="inline-add" data-form="project-task" data-id="${p.id}" data-milestone="${milestoneId || ''}">
-    <input name="title" placeholder="${milestoneId ? 'Add a task to this milestone' : 'Add a task'}" autocomplete="off">
+  return `<form class="inline-add add-bar" data-form="project-task" data-id="${p.id}" data-milestone="${milestoneId || ''}">
+    <span class="add-bar-plus">${icon('plus')}</span>
+    <input name="title" placeholder="${milestoneId ? 'Add a task' : 'Add a task'}" autocomplete="off" enterkeyhint="done">
     <button class="link strong" type="submit">Add</button>
-  </form>
-  ${milestoneId ? `<button class="add-inline" data-action="project-task-full" data-id="${p.id}" data-milestone="${milestoneId}">${icon('repeat')} Add a repeating task</button>` : ''}`;
+  </form>`;
 }
 
 // A project task: just the task (tap it to edit, or to add it to your schedule).
@@ -351,8 +362,15 @@ export const projectActions = {
     }
     return false;
   },
+  'ms-show': (el) => { ui.openMs = ui.openMs || {}; ui.openMs[el.dataset.mid] = !ui.openMs[el.dataset.mid]; },
   'mini-toggle': (el) => {
     const o = ownerOf(el);
+    // A project milestone can only be checked off once all its tasks are done
+    if (o && el.dataset.kind === 'project') {
+      const m = (o.miniGoals || []).find((x) => x.id === el.dataset.mid);
+      const left = S.milestoneTasks(o.id, m?.id).filter((t) => !t.repeat && !t.done).length;
+      if (m && !m.done && left > 0) { toast(`Finish its ${left} task${left > 1 ? 's' : ''} first`); return false; }
+    }
     if (o) {
       S.toggleMiniGoal(o, el.dataset.mid);
       if (el.dataset.kind === 'project') S.updateProject(o.id, {}, { worked: true });

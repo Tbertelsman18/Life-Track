@@ -1006,3 +1006,44 @@ button.ms-title { text-align: left; padding: 2px 0; }
 .ms-list { display: flex; flex-direction: column; gap: 14px; }
 .ms-head .ms-drag { order: 3; margin-left: auto; height: 40px; }
 .ms-card.drag-chosen { box-shadow: 0 10px 28px rgba(0,0,0,0.18); transform: scale(1.01); }
+
+/* ================================================================ Reorder mode
+   ≡ handles only show after tapping "Reorder"; then drag right away. */
+.sort-list .drag, .proj-card .drag, .ms-drag { display: none; }
+body.reordering .sort-list .drag, body.reordering .proj-card .drag, body.reordering .ms-drag { display: inline-flex; }
+body.reordering .sort-list, body.reordering .proj-list, body.reordering .ms-list,
+body.reordering .drag { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+body.reordering .drag { color: var(--accent); opacity: 1; }
+body.reordering .ms-list .ms-card .inline-add, body.reordering .ms-list .ms-card .task-list { display: none; }
+.reorder-btn {
+  font-size: 14px; font-weight: 600; color: var(--accent); padding: 6px 12px; border-radius: 999px;
+  background: var(--accent-soft); flex: none;
+}
+.reorder-btn.on { background: var(--accent); color: var(--accent-ink); }
+.reorder-row { display: flex; justify-content: flex-end; margin: -4px 0 -6px; }
+body.beach .view-body > .reorder-row .reorder-btn:not(.on) { background: rgba(255, 255, 255, 0.85); }
+.drag-fallback, .sortable-fallback { opacity: 0.95 !important; }
+
+/* ================================================================ Add bars: the whole bar is the text box */
+.inline-add.add-bar {
+  border-top: 0; margin-top: 8px; padding: 0 6px 0 12px; gap: 6px;
+  background: var(--fill); border-radius: 12px; min-height: 46px; cursor: text;
+}
+.inline-add.add-bar input { background: transparent; border: 0; padding: 10px 2px; }
+.inline-add.add-bar input:focus { background: transparent; border: 0; }
+.inline-add.add-bar:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); background: var(--card); }
+.add-bar-plus { display: inline-flex; color: var(--accent); flex: none; }
+.add-bar-plus .ic { width: 18px; height: 18px; }
+.inline-add.top-line.add-bar { margin-top: 0; }
+
+/* ================================================================ Projects: clearer "done" */
+.ms-check.locked { opacity: 0.45; }
+.ms-card.ms-ready .ms-check { border-color: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent); }
+.ms-card .ready { color: var(--good); font-weight: 650; }
+.ms-card.ms-done { background-color: color-mix(in srgb, var(--good) 9%, var(--card)) !important; }
+.ms-card.ms-done .ms-check { background: var(--good); border-color: var(--good); }
+.ms-card.ms-done .ms-name { color: var(--text-2); text-decoration: none; }
+.done-badge { display: inline-flex; align-items: center; gap: 3px; color: var(--good); font-weight: 700; }
+.done-badge .ic { width: 13px; height: 13px; stroke-width: 2.6; }
+.ms-card .task.done { opacity: 0.6; }
+.add-inline.small { font-size: 14px; min-height: 30px; padding-top: 2px; }

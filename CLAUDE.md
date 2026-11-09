@@ -22,8 +22,12 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
 - **Project tasks** use their own short form (`openProjectTaskSheet`): name, Milestone chips, Add to my schedule
   (reveals date/time), notes. Repeat days only for a repeating task. No Section, Important or More options.
   Adding a milestone = just its name; tap a milestone to rename it, give it a date, or delete it.
-  Milestones are dragged into order (≡ on each, 2-second hold; stored as the `miniGoals` array order; finished ones
-  drop to the bottom). "Add a repeating task" appears only inside a milestone.
+  Milestones can be put in order (stored as the `miniGoals` array order; finished ones drop to the bottom).
+  No "Add a repeating task" link in projects. Add bars are one big tappable field (`.add-bar`).
+  A milestone can only be checked off once all its tasks are done (it reopens if it gets an unfinished task).
+  Done milestones are green with a "✓ Done" badge and their tasks folded away; done tasks sink to the bottom.
+- **Reordering** (Planner tasks, Projects list, milestones): tap **Reorder** to show the ≡ handles, drag right away
+  (no long press: it made iPhone highlight text), tap **Done**. Handles are hidden otherwise.
 - Project cards on the Projects list show only rank, name and status (no dates or details). No "drag to
   reorder" hint text anywhere: the owner knows how.
 - Unfinished one-time tasks from earlier days get a "Not finished" box on today: Move to today, Not completed

@@ -280,6 +280,8 @@ export function updateTask(id, changes) {
     }
   }
   Object.assign(t, changes);
+  const proj = t.projectId && getProject(t.projectId);
+  if (proj) reopenMilestones(proj);
   save();
 }
 
@@ -818,9 +820,19 @@ export function milestoneTasks(projectId, milestoneId) {
   return projectTasks(projectId).filter((t) => (t.milestoneId || null) === (milestoneId || null));
 }
 
+// A milestone can't stay checked off while it has unfinished tasks.
+function reopenMilestones(p) {
+  for (const m of p.miniGoals || []) {
+    if (m.done && data.tasks.some((t) => t.projectId === p.id && t.milestoneId === m.id && !t.repeat && !t.done)) {
+      m.done = false; m.doneAt = null;
+    }
+  }
+}
+
 function touchProject(id) {
   const p = id && getProject(id);
   if (p) {
+    reopenMilestones(p);
     p.lastWorkedAt = nowISO();
     if (p.status === 'Not started' && projectTasks(id).some((t) => t.done)) p.status = 'In progress';
     if (p.status === 'In progress' && !p.startedAt) p.startedAt = nowISO();

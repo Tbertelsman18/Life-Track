@@ -2,7 +2,7 @@
 
 import * as D from './dates.js';
 import * as S from './store.js';
-import { ui, esc, icon, rerender, go, sectionColor, makeSortable, holdOptions, toast } from './ui.js';
+import { ui, esc, icon, rerender, go, sectionColor, makeSortable, holdOptions, reorderButton, toast } from './ui.js';
 import { openTaskSheet, openEventSheet, openAddSheet, openDailySheet } from './forms.js';
 import { doExport } from './more.js';
 
@@ -245,7 +245,8 @@ function renderDayTasks(key) {
     </section>` : '';
 
   const tasksCard = `<section class="card">
-    <h2 class="card-title">${isToday ? "Today's Tasks" : 'Tasks'} ${rest.length ? `<span class="count">${rest.length}</span>` : ''}</h2>
+    <div class="card-head"><h2 class="card-title">${isToday ? "Today's Tasks" : 'Tasks'} ${rest.length ? `<span class="count">${rest.length}</span>` : ''}</h2>
+      ${open.length > 1 ? reorderButton() : ''}</div>
     ${list('day-sort', rest, open.length ? 'Nothing else today' : done.length ? 'All done. Nice work.' : 'Nothing planned. Tap + to add a task.')}
   </section>`;
 
@@ -667,7 +668,7 @@ export function afterHome() {
     if (!el) continue;
     window.Sortable.create(el, {
       group: 'day-tasks', handle: '.drag', animation: 150, ghostClass: 'drag-ghost',
-      ...holdOptions, // press and hold the handle before it moves
+      ...holdOptions, // handles only show after tapping Reorder
       onEnd: (e) => { if (e.from !== e.to || e.oldIndex !== e.newIndex) save(); },
     });
   }

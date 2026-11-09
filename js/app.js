@@ -16,6 +16,7 @@ import { renderMore, renderPlanning, renderHistory, renderPushed, renderRepeatin
 const actions = {
   ...homeActions, ...projectActions, ...goalActions, ...listActions, ...moreActions,
   back: () => { back(); return false; },
+  'reorder-toggle': () => { ui.reorder = !ui.reorder; },
   'close-sheet': () => { closeSheet(); return false; },
   add: () => {
     const p = ui.page;
@@ -48,6 +49,7 @@ function renderPage(p) {
 
 function render() {
   const main = $('#main');
+  document.body.classList.toggle('reordering', Boolean(ui.reorder));
   const y = window.scrollY;
   if (ui.page) main.innerHTML = renderPage(ui.page);
   else if (ui.tab === 'home') main.innerHTML = renderHome();
@@ -76,6 +78,9 @@ S.subscribe(render);
 
 // ---------------------------------------------------------------- taps
 document.addEventListener('click', (e) => {
+  // Tapping anywhere on an add bar starts typing in it
+  const bar = e.target.closest('.add-bar');
+  if (bar && !e.target.closest('button, input')) { bar.querySelector('input')?.focus(); return; }
   const el = e.target.closest('[data-action], [data-tab]');
   if (!el) return;
 
@@ -83,6 +88,7 @@ document.addEventListener('click', (e) => {
     // Tapping the tab you're already on goes back to its main screen
     ui.tab = el.dataset.tab;
     ui.page = null;
+    ui.reorder = false;
     if (ui.tab === 'home' && ui.view === 'day' && !el.classList.contains('active')) ui.checkEdit = false;
     render();
     window.scrollTo(0, 0);

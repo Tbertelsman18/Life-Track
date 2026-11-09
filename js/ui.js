@@ -43,12 +43,14 @@ export const rerender = () => hooks.render();
 
 export function go(page) {
   ui.page = page;
+  ui.reorder = false;
   rerender();
   window.scrollTo(0, 0);
 }
 
 export function back() {
   ui.page = ui.page?.parent || null;
+  ui.reorder = false;
   rerender();
   window.scrollTo(0, 0);
 }
@@ -139,10 +141,12 @@ export function toast(msg) {
 }
 
 // Drag-to-reorder using the SortableJS library (loaded in index.html).
-// How long to press and hold a drag handle (≡) before it can move, so a hand
-// resting on the edge of the screen while scrolling doesn't drag things.
-export const HOLD_TO_DRAG_MS = 2000;
-export const holdOptions = { delay: HOLD_TO_DRAG_MS, delayOnTouchOnly: true, touchStartThreshold: 8, chosenClass: 'drag-chosen' };
+// Reordering: tap "Reorder" to show the ≡ handles, drag right away (no long
+// press, which made iPhone highlight text), then tap "Done".
+export const holdOptions = { delay: 0, chosenClass: 'drag-chosen', forceFallback: true, fallbackTolerance: 3 };
+export function reorderButton(label = 'Reorder') {
+  return `<button class="reorder-btn ${ui.reorder ? 'on' : ''}" data-action="reorder-toggle">${ui.reorder ? 'Done' : label}</button>`;
+}
 
 export function makeSortable(el, onEnd) {
   if (!el || !window.Sortable) return;

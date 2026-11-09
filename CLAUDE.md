@@ -57,6 +57,6 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   tasks), no "Radar project" wording. **Ideas** are lighter: quick one-line thoughts that may get dropped, no planning.
 - The Planner has no Sunday banners and no Daily reflection (both removed at the owner's request; reflection
   answers stay saved in `grades[date].reflect`).
-- Beach background, daytime only: cartoon dolphins leap across the water; every ~34s a shark leaps, misses,
+- Beach background, daytime only: two cartoon dolphins leap now and then (about every 7-8s each); every ~34s a shark leaps, misses,
   belly-flops (splash + dizzy stars) and a dolphin says "Nope! 😂". Playful, never gory. Off with reduce-motion.
 - **Goals** are switched off for now (`GOALS_ON` in `js/store.js`); the data is kept. The owner may bring it back later.

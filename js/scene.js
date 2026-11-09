@@ -169,7 +169,7 @@ function seaLife(H) {
       <g class="dol-jump" style="animation-duration:${jump}s;animation-delay:${delay}s"><g transform="scale(${scale})">${DOLPHIN}</g></g>
     </g></g>`;
   return `<g class="sea-life">
-    ${dolphin(17, 0, 3.4, 0.85)}${dolphin(21, -7, 4.1, 0.7)}${dolphin(25, -15, 3.8, 0.78)}
+    ${dolphin(19, 0, 7.2, 0.85)}${dolphin(24, -11, 8.4, 0.74)}
     <g transform="translate(0,${y + 4})"><g class="shark-fin"><path d="M0,0 L9,-15 L20,0 Z" fill="#5f6b78"/><path d="M-6,1 Q10,-3 26,1" stroke="#fff" stroke-width="1.4" fill="none" opacity="0.8"/></g></g>
     <g transform="translate(160,${y})"><g class="shark-leap"><g transform="scale(0.85)">${SHARK}</g></g></g>
     <g transform="translate(232,${y + 2})"><g class="shark-splash">

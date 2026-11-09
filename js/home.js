@@ -577,22 +577,13 @@ function importantOn(k) {
 function renderMonth() {
   const today = D.todayKey();
   const head = D.WEEK_ORDER.map((w) => `<div class="m-dow">${D.DAY_NAMES[w][0]}</div>`).join('');
-  const grid = D.monthGrid(ui.date);
-  const inMonth = (i) => i >= 0 && i < grid.length && D.sameMonth(grid[i], ui.date);
-  const cells = grid.map((k, i) => {
+  const cells = D.monthGrid(ui.date).map((k) => {
     const items = importantOn(k);
-    // Outline around the whole month: draw an edge wherever this month's day
-    // meets a day from another month (or the edge of the grid).
-    const edges = inMonth(i) ? {
-      '--ot': inMonth(i - 7) ? 0 : 1, '--ob': inMonth(i + 7) ? 0 : 1,
-      '--ol': i % 7 === 0 || !inMonth(i - 1) ? 1 : 0, '--or': i % 7 === 6 || !inMonth(i + 1) ? 1 : 0,
-    } : null;
-    const edgeStyle = edges ? Object.entries(edges).map(([v, n]) => `${v}:${n}`).join(';') : '';
     const shown = items.slice(0, 2).map((c) =>
       `<span class="m-chip ${c.done ? 'done' : ''} ${c.kind === 'event' ? 'ev' : ''}" style="--c:${c.color}">${esc(c.title)}</span>`).join('');
     const more = items.length > 2 ? `<span class="m-more">+${items.length - 2}</span>` : '';
     const cls = ['m-cell', D.sameMonth(k, ui.date) ? '' : 'other', k === today ? 'today' : '', k < today ? 'past' : ''].join(' ');
-    return `<button class="${cls} ${edges ? 'in-month' : ''}" style="${edgeStyle}" data-action="open-day" data-date="${k}" aria-label="${esc(D.formatLong(k))}${items.length ? `, ${items.length} important` : ''}">
+    return `<button class="${cls}" data-action="open-day" data-date="${k}" aria-label="${esc(D.formatLong(k))}${items.length ? `, ${items.length} important` : ''}">
       <span class="m-num">${D.fromKey(k).getDate()}</span>${shown}${more}
     </button>`;
   }).join('');

@@ -1094,12 +1094,10 @@ body.beach .proj-feature, .proj-feature { background: var(--card) !important; -w
 .m-chip.ev { background: var(--c); color: #fff; }
 .m-dow { color: var(--text-2); }
 
-/* A teal outline around this month's block of days */
+/* Today: a teal box around its square */
 .m-cell { position: relative; }
-.m-cell.in-month::after {
-  content: ""; position: absolute; inset: -1px; pointer-events: none; z-index: 1;
-  border-style: solid; border-color: var(--accent);
-  border-width: calc(var(--ot) * 2.5px) calc(var(--or) * 2.5px) calc(var(--ob) * 2.5px) calc(var(--ol) * 2.5px);
-}
 .m-cell.today { box-shadow: none; }
-.m-cell.in-month::after { inset: 0; border-width: calc(var(--ot) * 3px) calc(var(--or) * 3px) calc(var(--ob) * 3px) calc(var(--ol) * 3px); }
+.m-cell.today::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  border: 3px solid var(--accent); border-radius: 4px;
+}

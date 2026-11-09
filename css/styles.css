@@ -1154,3 +1154,9 @@ body.beach .proj-feature, .proj-feature { background: var(--card) !important; -w
   98%, 100% { transform: translateY(14px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { #scene .sea-life { display: none; } }
+
+/* Beach at night: the campfire's reflection shimmers on the water */
+#scene .fire-refl { animation: fireRefl 1.8s ease-in-out infinite; }
+#scene .fire-refl.r1 { animation-delay: -0.5s; } #scene .fire-refl.r2 { animation-delay: -1s; } #scene .fire-refl.r3 { animation-delay: -1.4s; }
+@keyframes fireRefl { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.75; } }
+@media (prefers-reduced-motion: reduce) { #scene .fire-refl { animation: none; } }

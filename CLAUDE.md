@@ -59,6 +59,7 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   answers stay saved in `grades[date].reflect`).
 - Beach background, daytime only: two cartoon dolphins leap now and then (about every 7-8s each); every ~34s a shark leaps, misses,
   belly-flops (splash + dizzy stars) and a dolphin says "Nope! 😂". Playful, never gory. Off with reduce-motion.
-  At night (after the sunset colors end, until sunrise colors) a campfire glows on the island's little beach across
-  the water, with its reflection on the water (`beachFire` in scene.js; reuses the Forest `campfire`).
+  At night (after the sunset colors end, until sunrise colors) a campfire sits on the near beach in front: a stretch
+  of sand comes forward on the right just under the horizon so it shows above the cards, with a log seat and glow
+  (`beachFire` in scene.js; reuses the Forest `campfire`). The owner didn't like it far away on the island.
 - **Goals** are switched off for now (`GOALS_ON` in `js/store.js`); the data is kept. The owner may bring it back later.

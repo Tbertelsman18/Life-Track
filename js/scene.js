@@ -136,23 +136,25 @@ function beach(p, sunX, sunY, sunColor, low, phase) {
     <rect y="${H}" width="400" height="70" fill="url(#water)"/>
     ${shimmer}
     ${phase === 'day' ? seaLife(H) : ''}
-    ${phase === 'night' ? beachFire(H) : ''}
     <path d="M0 ${H + 58} C 80 ${H + 50}, 160 ${H + 64}, 240 ${H + 56} S 360 ${H + 50}, 400 ${H + 56} L400 ${H + 62} C 330 ${H + 58}, 250 ${H + 70}, 160 ${H + 66} S 40 ${H + 60}, 0 ${H + 66}Z" fill="${p.shore}" opacity="0.8"/>
     <rect y="${H + 62}" width="400" height="${480 - H - 62}" fill="url(#ground)"/>
+    ${phase === 'night' ? beachFire(H) : ''}
     <path d="M8 480 C 20 400, 44 292, 80 190 L89 193 C 56 294, 36 400, 26 480Z" fill="${p.trunk}"/>
     ${fronds(84, 188, p.palm)}`;
 }
 
-// Night on the beach: a campfire on the island's little beach across the water,
-// glowing and reflecting on the water from the end of sunset until sunrise.
+// Night on the beach: a stretch of sand comes forward on the right, just under
+// the horizon (so it shows above the cards), with a campfire on it whose glow
+// lights up the sand. From the end of sunset until sunrise.
 function beachFire(H) {
-  const x = 340, y = H - 6;
-  const night = { fire: 1, log: '#1a1418', stone: '#3b4256' };
-  const refl = [0, 1, 2, 3].map((i) => `<rect class="fire-refl r${i}" x="${x - (14 - i * 3)}" y="${H + 4 + i * 7}" width="${28 - i * 6}" height="2.2" rx="1.1" fill="#ffb04a" opacity="${0.7 - i * 0.14}"/>`).join('');
+  const x = 318, y = H + 10;
+  const night = { fire: 1, log: '#241a1c', stone: '#5a5468' };
   return `<g class="beach-fire">
-    <path d="M296 ${H} C 312 ${H - 8}, 362 ${H - 10}, 388 ${H - 2} L388 ${H}Z" fill="#3a3552"/>
-    ${refl}
-    <g transform="translate(${x} ${y}) scale(0.7) translate(${-x} ${-y})">${campfire(x, y, night)}</g>
+    <path d="M160 480 L160 ${H + 60} C 200 ${H + 30}, 240 ${H + 8}, 286 ${H + 3} S 370 ${H - 1}, 400 ${H + 1} L400 480Z" fill="#4b4560"/>
+    <path d="M196 ${H + 36} C 232 ${H + 14}, 264 ${H + 6}, 296 ${H + 3}" stroke="#9fb0d8" stroke-opacity="0.35" stroke-width="1.5" fill="none"/>
+    <ellipse cx="${x}" cy="${y + 4}" rx="90" ry="22" fill="url(#fireglow)" opacity="0.75"/>
+    <g transform="translate(${x} ${y}) scale(0.9) translate(${-x} ${-y})">${campfire(x, y, night)}</g>
+    <rect x="${x + 26}" y="${y - 1}" width="34" height="7" rx="3.5" fill="#2e2226" transform="rotate(-6 ${x + 43} ${y + 2})"/>
   </g>`;
 }
 

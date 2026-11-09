@@ -1047,3 +1047,16 @@ body.beach .view-body > .reorder-row .reorder-btn:not(.on) { background: rgba(25
 .done-badge .ic { width: 13px; height: 13px; stroke-width: 2.6; }
 .ms-card .task.done { opacity: 0.6; }
 .add-inline.small { font-size: 14px; min-height: 30px; padding-top: 2px; }
+
+/* ================================================================ Projects list: clean, matching rows */
+.proj-card::before { display: none; }
+.proj-card { align-items: center; }
+.proj-main { flex-direction: row; align-items: center; gap: 10px; padding: 16px 14px 16px 18px; min-height: 58px; }
+.proj-card:not(:has(.drag)) .proj-main, body.reordering .proj-card .proj-main { padding-left: 18px; }
+body.reordering .proj-card .proj-main { padding-left: 4px; }
+.proj-card .proj-title { font-weight: 600; font-size: 17px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.proj-card .idea-text { font-weight: 500; }
+.proj-status { font-size: 13.5px; color: var(--muted); white-space: nowrap; flex: none; }
+.proj-chev { display: inline-flex; color: var(--muted); flex: none; }
+.proj-chev .ic { width: 18px; height: 18px; }
+.proj-card .drag { align-self: center; margin-left: 8px; }

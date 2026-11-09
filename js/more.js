@@ -9,7 +9,7 @@ import { paintScene, currentScene, SCENES } from './scene.js';
 import { syncKU } from './ku.js';
 
 // Shown at the bottom of More, so you can tell which version is loaded.
-export const APP_VERSION = '1.49 (Nov 9)';
+export const APP_VERSION = '1.50 (Nov 9)';
 
 // The line under "Kansas basketball games" in Settings
 function kuStatus(st) {
@@ -376,10 +376,10 @@ export function renderIdeas() {
         <textarea name="text" rows="1" placeholder="Jot down an idea…" enterkeyhint="done"></textarea>
         <button class="btn primary" type="submit">Save</button>
       </form>
-      ${ideas.length ? `<ul class="info-list">${ideas.map((i) => `
-        <li><button class="info-card" data-action="edit-idea" data-id="${i.id}">
-          <span class="info-body">${esc(i.text)}</span>
-          <span class="task-meta">${esc(D.formatShort(D.keyOfISO(i.createdAt)))}</span>
+      ${ideas.length ? `<ul class="proj-list">${ideas.map((i) => `
+        <li class="proj-card"><button class="proj-main" data-action="edit-idea" data-id="${i.id}">
+          <span class="proj-title idea-text">${esc(i.text)}</span>
+          <span class="proj-status">${esc(D.formatMonthDay(D.keyOfISO(i.createdAt)))}</span>
         </button></li>`).join('')}</ul>`
       : '<p class="empty">Quick ideas you might turn into a project someday, or drop. No planning needed: type one in the bar above and tap Save.</p>'}`;
 }

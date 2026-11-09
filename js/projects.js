@@ -65,17 +65,15 @@ export function renderProjects() {
 }
 
 function projectCard(p, i) {
-  // Just the project: its rank and name (and status). Details are inside the project.
+  // A clean row: the project's name, a small gray status, and ›. Order = priority.
   const sortable = p.state !== 'done';
   return `
-    <li class="proj-card" data-id="${p.id}" style="--c:${sectionColor(p.sectionId)}">
+    <li class="proj-card" data-id="${p.id}">
       ${sortable ? `<span class="drag" aria-label="Drag to reorder">${icon('drag')}</span>` : ''}
       <button class="proj-main" data-action="open-project" data-id="${p.id}">
-        <span class="proj-top">
-          ${sortable ? `<span class="rank">#${i + 1}</span>` : ''}
-          <span class="proj-title">${esc(p.title)}</span>
-          ${p.state === 'active' ? `<span class="status ${statusClass(p.status)}">${esc(p.status)}</span>` : ''}
-        </span>
+        <span class="proj-title">${esc(p.title)}</span>
+        ${p.state === 'active' ? `<span class="proj-status">${esc(p.status)}</span>` : ''}
+        <span class="proj-chev">${icon('chev-right')}</span>
       </button>
     </li>`;
 }

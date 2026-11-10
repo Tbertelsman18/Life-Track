@@ -62,4 +62,5 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   At night (after the sunset colors end, until sunrise colors) a campfire sits on the near beach in front: a stretch
   of sand comes forward on the right just under the horizon so it shows above the cards, with a log seat and glow
   (`beachFire` in scene.js; reuses the Forest `campfire`). The owner didn't like it far away on the island.
+  Night beach colors are cool moonlit blue (sand, shore, and the page below via html[data-phase=night]), never beige.
 - **Goals** are switched off for now (`GOALS_ON` in `js/store.js`); the data is kept. The owner may bring it back later.

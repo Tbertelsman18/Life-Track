@@ -21,7 +21,7 @@ const LAND = {
     sunrise: { sea: ['#7d7fb6', '#f3a98c'], island: '#4a3e62', palm: '#2c2338', trunk: '#2c2338', ground: '#f2d7bd', shore: '#fbe7d6' },
     day: { sea: ['#1497c2', '#43d0d6'], island: '#3f8a6c', palm: '#1d7a4b', trunk: '#8b6640', ground: '#f6e2bd', shore: '#ffffff' },
     sunset: { sea: ['#4c3c70', '#f08a4a'], island: '#2e2140', palm: '#1d1524', trunk: '#1d1524', ground: '#ebc8a2', shore: '#ffd9b8' },
-    night: { sea: ['#122050', '#26407a'], island: '#0e1430', palm: '#080b1c', trunk: '#080b1c', ground: '#cdbfa8', shore: '#9fb0d8' },
+    night: { sea: ['#122050', '#26407a'], island: '#0e1430', palm: '#080b1c', trunk: '#080b1c', ground: '#3b4566', shore: '#7f90c0' },
   },
   mountains: {
     sunrise: { far: '#a28cbc', mid: '#6d5c8f', near: '#41365f', snow: '#ffe3d6', lake: ['#8b86bd', '#f2b096'], pine: '#2b2440', ground: '#ddd0dc' },
@@ -150,9 +150,17 @@ function beachFire(H) {
   const x = 318, y = H + 10;
   const night = { fire: 1, log: '#241a1c', stone: '#5a5468' };
   return `<g class="beach-fire">
-    <path d="M160 480 L160 ${H + 60} C 200 ${H + 30}, 240 ${H + 8}, 286 ${H + 3} S 370 ${H - 1}, 400 ${H + 1} L400 480Z" fill="#4b4560"/>
-    <path d="M196 ${H + 36} C 232 ${H + 14}, 264 ${H + 6}, 296 ${H + 3}" stroke="#9fb0d8" stroke-opacity="0.35" stroke-width="1.5" fill="none"/>
-    <ellipse cx="${x}" cy="${y + 4}" rx="90" ry="22" fill="url(#fireglow)" opacity="0.75"/>
+    <defs>
+      <linearGradient id="nightsand" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#4a5680"/><stop offset="0.35" stop-color="#323c60"/><stop offset="1" stop-color="#1e2540"/>
+      </linearGradient>
+      <radialGradient id="firesand" cx="0.5" cy="0.4" r="0.6">
+        <stop offset="0" stop-color="#ff9a48" stop-opacity="0.55"/><stop offset="0.55" stop-color="#d9673a" stop-opacity="0.18"/><stop offset="1" stop-color="#d9673a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <path d="M160 480 L160 ${H + 60} C 200 ${H + 30}, 240 ${H + 8}, 286 ${H + 3} S 370 ${H - 1}, 400 ${H + 1} L400 480Z" fill="url(#nightsand)"/>
+    <path d="M196 ${H + 36} C 232 ${H + 14}, 264 ${H + 6}, 296 ${H + 3} S 372 ${H}, 400 ${H + 2}" stroke="#aebde8" stroke-opacity="0.45" stroke-width="1.4" fill="none"/>
+    <ellipse cx="${x}" cy="${y + 8}" rx="80" ry="30" fill="url(#firesand)"/>
     <g transform="translate(${x} ${y}) scale(0.9) translate(${-x} ${-y})">${campfire(x, y, night)}</g>
     <rect x="${x + 26}" y="${y - 1}" width="34" height="7" rx="3.5" fill="#2e2226" transform="rotate(-6 ${x + 43} ${y + 2})"/>
   </g>`;
@@ -371,6 +379,7 @@ export function paintScene() {
   document.body.classList.toggle('beach', on); // "beach" = any scene is showing
   document.documentElement.classList.toggle('beach', on);
   document.documentElement.dataset.scene = on ? name : '';
+  document.documentElement.dataset.phase = on ? skyNow(new Date()).phase : '';
   if (!on) { el.innerHTML = ''; return; }
   const now = new Date();
   document.body.dataset.phase = skyNow(now).phase;

@@ -1154,3 +1154,6 @@ body.beach .proj-feature, .proj-feature { background: var(--card) !important; -w
   98%, 100% { transform: translateY(14px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { #scene .sea-life { display: none; } }
+
+/* Beach at night: the page below the scene is moonlit sand too (not daytime beige) */
+html.beach[data-scene="beach"][data-phase="night"] { background: #1f2640; }

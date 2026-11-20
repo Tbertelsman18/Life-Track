@@ -119,8 +119,7 @@ export function renderProjectPage(id) {
       <section class="card">
         <form class="inline-add top-line add-bar" data-form="project-mini" data-id="${p.id}">
           <span class="add-bar-plus">${icon('flag')}</span>
-          <input name="title" placeholder="Add a milestone" autocomplete="off">
-          <button class="link strong" type="submit">Add</button>
+          <input name="title" placeholder="Add a milestone" autocomplete="off" enterkeyhint="done">
         </form>
         ${minis.length ? '' : `<p class="hint left">Start with the milestones: the big things you need to reach this goal.
           Then add the tasks for each one right inside it.</p>`}
@@ -202,8 +201,7 @@ const countOf = (tasks) => {
 function addTaskForm(p, milestoneId) {
   return `<form class="inline-add add-bar" data-form="project-task" data-id="${p.id}" data-milestone="${milestoneId || ''}">
     <span class="add-bar-plus">${icon('plus')}</span>
-    <input name="title" placeholder="${milestoneId ? 'Add a task' : 'Add a task'}" autocomplete="off" enterkeyhint="done">
-    <button class="link strong" type="submit">Add</button>
+    <input name="title" placeholder="Add a task" autocomplete="off" enterkeyhint="done">
   </form>`;
 }
 

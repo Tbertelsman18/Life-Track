@@ -23,7 +23,7 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   (reveals date/time), notes. Repeat days only for a repeating task. No Section, Important or More options.
   Adding a milestone = just its name; tap a milestone to rename it, give it a date, or delete it.
   Milestones can be put in order (stored as the `miniGoals` array order; finished ones drop to the bottom).
-  No "Add a repeating task" link in projects. Add bars are one big tappable field (`.add-bar`).
+  No "Add a repeating task" link in projects. Add bars are one big tappable field (`.add-bar`) with no "Add" button on project pages (keyboard Done adds it).
   A milestone can only be checked off once all its tasks are done (it reopens if it gets an unfinished task).
   Done milestones are green with a "✓ Done" badge and their tasks folded away; done tasks sink to the bottom.
 - **Reordering** (Planner tasks, Projects list, milestones): tap **Reorder** to show the ≡ handles, drag right away

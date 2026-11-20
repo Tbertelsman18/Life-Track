@@ -46,8 +46,8 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   adds tasks to them over time). **Projects stay off the schedule for now**: no target dates or milestones on the
   Planner; a project task only shows there if the owner turns on **Add to my schedule** in its edit sheet (then a
   date appears; off = no date). Project tasks have no Important switch. Say **Milestones**, never "mini goals" (the data field is still `miniGoals`).
-  Every project page uses the same layout: add-a-milestone bar at the top → each milestone with its tasks
-  (one-time first, then **repeating tasks that belong to that milestone**, never in a separate box) → Other tasks →
+  Every project page uses the same layout: each milestone with its tasks
+  (one-time first, then **repeating tasks that belong to that milestone**, never in a separate box) → Other tasks → add-a-milestone bar (moved down from the top at the owner's request) →
   Notes → **Details** at the bottom (status, section, progress, target date, last worked on: low priority for the owner).
   Project repeating tasks are different from Routines: they belong to a milestone.
   A possible next step: an optional **Due by** date on tasks, separate from the "do on" date.

@@ -103,10 +103,19 @@ export function renderProjectPage(id) {
   const statuses = S.PROJECT_STATUSES.map((s) => `
     <button class="chip ${p.status === s ? 'on' : ''} ${statusClass(s)}" data-action="project-status" data-id="${p.id}" data-status="${s}">${s}</button>`).join('');
 
-  // Order: the goal (title) → add a milestone → each milestone with its tasks → other tasks → notes → details.
+  // Order: the goal (title) → each milestone with its tasks → other tasks → add a milestone → notes → details.
   return `
     ${pageHeader(p.title, { backLabel: 'Projects', right: `<button class="link" data-action="edit-project" data-id="${p.id}">Edit</button>` })}
     <div class="view-body">
+      ${minis.filter((m) => !m.done).length > 1 ? `<div class="reorder-row">${reorderButton('Reorder milestones')}</div>` : ''}
+      <div class="ms-list" id="ms-sort" data-project="${p.id}">${minis.map((m) => milestoneBlock(p, m)).join('')}</div>
+
+      ${otherTasks.length || !minis.length ? `<section class="card ms-card">
+        <h2 class="card-title">${minis.length ? 'Other tasks' : 'Tasks'} ${countOf(otherTasks)}</h2>
+        ${taskListOf([...otherTasks.filter((t) => t.repeat || !t.done), ...otherTasks.filter((t) => !t.repeat && t.done)])}
+        ${addTaskForm(p, null)}
+      </section>` : ''}
+
       <section class="card">
         <form class="inline-add top-line add-bar" data-form="project-mini" data-id="${p.id}">
           <span class="add-bar-plus">${icon('flag')}</span>
@@ -116,15 +125,6 @@ export function renderProjectPage(id) {
         ${minis.length ? '' : `<p class="hint left">Start with the milestones: the big things you need to reach this goal.
           Then add the tasks for each one right inside it.</p>`}
       </section>
-
-      ${minis.filter((m) => !m.done).length > 1 ? `<div class="reorder-row">${reorderButton('Reorder milestones')}</div>` : ''}
-      <div class="ms-list" id="ms-sort" data-project="${p.id}">${minis.map((m) => milestoneBlock(p, m)).join('')}</div>
-
-      ${otherTasks.length || !minis.length ? `<section class="card ms-card">
-        <h2 class="card-title">${minis.length ? 'Other tasks' : 'Tasks'} ${countOf(otherTasks)}</h2>
-        ${taskListOf([...otherTasks.filter((t) => t.repeat || !t.done), ...otherTasks.filter((t) => !t.repeat && t.done)])}
-        ${addTaskForm(p, null)}
-      </section>` : ''}
 
       <section class="card">
         <h2 class="card-title">Notes</h2>

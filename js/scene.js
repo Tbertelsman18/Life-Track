@@ -140,7 +140,8 @@ function beach(p, sunX, sunY, sunColor, low, phase) {
     <rect y="${H + 62}" width="400" height="${480 - H - 62}" fill="url(#ground)"/>
     ${phase === 'night' ? beachFire(H) : ''}
     <path d="M8 480 C 20 400, 44 292, 80 190 L89 193 C 56 294, 36 400, 26 480Z" fill="${p.trunk}"/>
-    ${fronds(84, 188, p.palm)}`;
+    ${fronds(84, 188, p.palm)}
+    ${cheeseGirl(H, phase)}`;
 }
 
 // Night on the beach: a stretch of sand comes forward on the right, just under
@@ -163,6 +164,58 @@ function beachFire(H) {
     <ellipse cx="${x}" cy="${y + 8}" rx="80" ry="30" fill="url(#firesand)"/>
     <g transform="translate(${x} ${y}) scale(0.9) translate(${-x} ${-y})">${campfire(x, y, night)}</g>
     <rect x="${x + 26}" y="${y - 1}" width="34" height="7" rx="3.5" fill="#2e2226" transform="rotate(-6 ${x + 43} ${y + 2})"/>
+  </g>`;
+}
+
+// ---------------------------------------------------------------- cheese girl
+// A very, very pale beachgoer who glows so bright she has to reassure everyone.
+// Sunglasses, a waving arm, sparkles, and a crab sneaking up with a cracker.
+// Shows all day and night (in the shallow water by day, on the sand by the fire at night).
+function cheeseGirl(H, phase) {
+  const x = 262, y = H + 10, skin = '#fffbea', suit = '#ff4f8b', hair = '#f2b33d';
+  const night = phase === 'night';
+  const sparkle = (sx, sy, s) => `<path d="M${sx},${sy - s} L${sx + s * 0.28},${sy - s * 0.28} L${sx + s},${sy} L${sx + s * 0.28},${sy + s * 0.28} L${sx},${sy + s} L${sx - s * 0.28},${sy + s * 0.28} L${sx - s},${sy} L${sx - s * 0.28},${sy - s * 0.28}Z" fill="#fff"/>`;
+  return `<g class="cheese-girl">
+    <defs><radialGradient id="cheeseglow"><stop offset="0" stop-color="#fffbe0" stop-opacity="${night ? 0.95 : 0.85}"/><stop offset="0.5" stop-color="#fff3a8" stop-opacity="${night ? 0.45 : 0.35}"/><stop offset="1" stop-color="#fff3a8" stop-opacity="0"/></radialGradient></defs>
+    <g transform="translate(${x} ${y})">
+      <circle cx="0" cy="-22" r="${night ? 40 : 32}" fill="url(#cheeseglow)"/>
+      <g class="cheese-sparkles">${sparkle(-17, -40, 4)}${sparkle(16, -16, 3.2)}${sparkle(-15, -10, 2.6)}${sparkle(20, -44, 2.4)}</g>
+      <rect x="-5" y="-16" width="4" height="16" rx="2" fill="${skin}"/><rect x="1" y="-16" width="4" height="16" rx="2" fill="${skin}"/>
+      <rect x="-6.5" y="-31" width="13" height="16" rx="5" fill="${skin}"/>
+      <path d="M-6.5,-19 L6.5,-19 L5,-14 L0,-12 L-5,-14Z" fill="${suit}"/>
+      <rect x="-6.5" y="-28" width="13" height="4.2" rx="2" fill="${suit}"/>
+      <path d="M-6,-28 L-11,-22 L-6.5,-18" stroke="${skin}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <g class="cheese-wave"><path d="M6,-28 L12,-34 L13,-43" stroke="${skin}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+      <rect x="-1.8" y="-34" width="3.6" height="4" fill="${skin}"/>
+      <path d="M-6,-40 C-9,-34 -10,-28 -12,-24 C-8,-26 -7,-31 -6,-35Z" fill="${hair}"/>
+      <circle cx="0" cy="-38" r="6.6" fill="${skin}"/>
+      <path d="M-6.8,-38 C-7,-46 7,-47 6.8,-39 C3,-43 -2,-43 -6.8,-38Z" fill="${hair}"/>
+      <rect x="-5.6" y="-39.6" width="4.8" height="3" rx="1.3" fill="#1c2b3a"/><rect x="0.8" y="-39.6" width="4.8" height="3" rx="1.3" fill="#1c2b3a"/>
+      <path d="M-0.8,-38.6 L0.8,-38.6" stroke="#1c2b3a" stroke-width="0.9"/>
+      <path d="M-2.4,-34.6 C-1,-33 1,-33 2.4,-34.6" stroke="#c0485f" stroke-width="1" fill="none" stroke-linecap="round"/>
+      ${night ? '' : `<rect x="-14" y="-5" width="28" height="7" fill="url(#water)" opacity="0.85"/>
+      <ellipse cx="0" cy="-5" rx="13" ry="2" fill="none" stroke="#fff" stroke-width="1.1" opacity="0.8"/>`}
+    </g>
+    <g transform="translate(${x + 30} ${y - 1})">
+      <ellipse cx="0" cy="0" rx="6" ry="4" fill="#e8553f"/>
+      <path d="M-4,2 L-8,5 M-2,3 L-4,6 M2,3 L4,6 M4,2 L8,5" stroke="#e8553f" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M-2,-3 L-2.6,-7 M2,-3 L2.6,-7" stroke="#e8553f" stroke-width="1"/>
+      <circle cx="-2.6" cy="-7.4" r="1.4" fill="#fff"/><circle cx="2.6" cy="-7.4" r="1.4" fill="#fff"/>
+      <circle cx="-2.9" cy="-7.6" r="0.7" fill="#1c2b3a"/><circle cx="2.3" cy="-7.6" r="0.7" fill="#1c2b3a"/>
+      <path d="M-5,-1 L-9,-6" stroke="#e8553f" stroke-width="2" stroke-linecap="round"/>
+      <g transform="rotate(-12 -11 -10)"><rect x="-15" y="-14" width="8" height="8" rx="1" fill="#e2b166"/>
+        <circle cx="-12.6" cy="-11.6" r="0.6" fill="#a87a35"/><circle cx="-9.4" cy="-11.6" r="0.6" fill="#a87a35"/><circle cx="-11" cy="-8.4" r="0.6" fill="#a87a35"/></g>
+      <path d="M5,-1 L9,-4" stroke="#e8553f" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(${x - 128} ${y - 82})">
+      <rect x="0" y="0" width="112" height="44" rx="11" fill="#fff"/>
+      <path d="M92,43 L114,58 L80,43Z" fill="#fff"/>
+      <g font-family="-apple-system, sans-serif" font-size="10" font-weight="700" fill="#1c2b3a" text-anchor="middle">
+        <text x="56" y="13.5">Don't worry guys,</text>
+        <text x="56" y="25.5">it's not cheese…</text>
+        <text x="56" y="37.5">it's my skin! 🧀✨</text>
+      </g>
+    </g>
   </g>`;
 }
 

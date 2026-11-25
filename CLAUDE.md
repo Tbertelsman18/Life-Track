@@ -63,4 +63,6 @@ See README.md for the file map. Bump `VERSION` in `sw.js` and `APP_VERSION` in `
   of sand comes forward on the right just under the horizon so it shows above the cards, with a log seat and glow
   (`beachFire` in scene.js; reuses the Forest `campfire`). The owner didn't like it far away on the island.
   Night beach colors are cool moonlit blue (sand, shore, and the page below via html[data-phase=night]), never beige.
+  Beach, day and night: a glowing, very pale girl in a pink bikini and sunglasses waves near the shore (`cheeseGirl`),
+  saying "Don't worry guys, it's not cheese… it's my skin! 🧀✨", with a crab holding a cracker. Drawn in front of the palm.
 - **Goals** are switched off for now (`GOALS_ON` in `js/store.js`); the data is kept. The owner may bring it back later.

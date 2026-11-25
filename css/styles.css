@@ -1157,10 +1157,3 @@ body.beach .proj-feature, .proj-feature { background: var(--card) !important; -w
 
 /* Beach at night: the page below the scene is moonlit sand too (not daytime beige) */
 html.beach[data-scene="beach"][data-phase="night"] { background: #1f2640; }
-
-/* Beach "cheese girl": her waving arm and twinkling glow sparkles (js/scene.js cheeseGirl). */
-#scene .cheese-wave { transform-box: fill-box; transform-origin: 0% 100%; animation: cheeseWave 1.6s ease-in-out infinite; }
-@keyframes cheeseWave { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(18deg); } }
-#scene .cheese-sparkles { animation: cheeseTwinkle 2.2s ease-in-out infinite; }
-@keyframes cheeseTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-@media (prefers-reduced-motion: reduce) { #scene .cheese-wave, #scene .cheese-sparkles { animation: none; } }
